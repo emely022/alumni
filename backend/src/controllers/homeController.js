@@ -1,3 +1,5 @@
+const { pool } = require('../config/db');
+
 const getHome = (req, res) => {
   const html = `<!DOCTYPE html>
 <html lang="tr">
@@ -44,6 +46,13 @@ const getHome = (req, res) => {
   <ul>
     <li><code>GET /</code> - Ana karşılama sayfası</li>
     <li><a href="/about"><code>GET /about</code></a> - Proje hakkında detaylı bilgi sayfası</li>
+    <li><a href="/api/swagger" target="_blank"><code>GET /api/swagger</code></a> - İnteraktif Swagger (OpenAPI) API Dokümantasyonu</li>
+    <li><a href="/api/health"><code>GET /api/health</code></a> - Uygulama ve veritabanı sağlık kontrolü (JSON)</li>
+    <li><a href="/api/users"><code>GET /api/users</code></a> - Kullanıcı listesi (In-Memory JSON)</li>
+    <li><code>POST /api/users</code> - Yeni kullanıcı ekleme (In-Memory JSON)</li>
+    <li><code>PUT /api/users/:id</code> - Kullanıcıyı tamamen güncelleme (Tüm alanlar zorunlu)</li>
+    <li><code>PATCH /api/users/:id</code> - Kullanıcıyı kısmi güncelleme (Sadece gönderilen alanlar)</li>
+    <li><code>DELETE /api/users/:id</code> - Kullanıcı silme (In-Memory JSON)</li>
     <li><code>GET /hello</code> - "Hello World!" mesajı döner</li>
     <li><code>GET /hello/:name</code> - Belirtilen isme özel karşılama mesajı döner (Örnek: <code>/hello/Emel</code>)</li>
     <li><code>GET /sum/:number1/:number2</code> - İki sayının toplamını hesaplar (Örnek: <code>/sum/5/3</code>)</li>
@@ -199,12 +208,31 @@ const getSum = (req, res) => {
   return res.status(200).send(`Toplam = ${number1} + ${number2} = ${result}`);
 };
 
+const getHealth = async (req, res) => {
+  let dbStatus = 'disconnected';
+  try {
+    const client = await pool.connect();
+    client.release();
+    dbStatus = 'connected';
+  } catch (err) {
+    dbStatus = 'error';
+  }
+
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: `${process.uptime().toFixed(2)}s`,
+    database: dbStatus,
+  });
+};
+
 module.exports = {
   getHome,
   getAbout,
   getHello,
   getHelloWithName,
   getSum,
+  getHealth,
 };
 
 

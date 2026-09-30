@@ -70,3 +70,8 @@ alumni/
    docker compose up --build   # force a rebuild before starting
    docker compose down         # stop containers and remove them
    ```
+
+## 📚 API Documentation
+
+API dokümantasyonuna [http://localhost:3000/api/swagger](http://localhost:3000/api/swagger) adresinden erişilebilir. Tüm endpoint'ler interaktif olarak görüntülenebilir ve doğrudan Swagger UI üzerinden test edilebilir.
+
