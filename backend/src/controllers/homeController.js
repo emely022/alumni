@@ -48,7 +48,10 @@ const getHome = (req, res) => {
     <li><a href="/about"><code>GET /about</code></a> - Proje hakkında detaylı bilgi sayfası</li>
     <li><a href="/api/swagger" target="_blank"><code>GET /api/swagger</code></a> - İnteraktif Swagger (OpenAPI) API Dokümantasyonu</li>
     <li><a href="/api/health"><code>GET /api/health</code></a> - Uygulama ve veritabanı sağlık kontrolü (JSON)</li>
-    <li><a href="/api/users"><code>GET /api/users</code></a> - Kullanıcı listesi (In-Memory JSON)</li>
+    <li><a href="/users"><code>GET /users</code></a> - Mezunlar listesi web sayfası (UserController - HTML)</li>
+    <li><a href="/api/users"><code>GET /api/users</code></a> - Kullanıcı listesi REST API (ApiUserController - JSON)</li>
+    <li><a href="/announcements"><code>GET /announcements</code></a> - Duyurular listesi web sayfası (AnnouncementController - HTML)</li>
+    <li><a href="/api/announcements"><code>GET /api/announcements</code></a> - Duyurular REST API (ApiAnnouncementController - JSON)</li>
     <li><code>POST /api/users</code> - Yeni kullanıcı ekleme (In-Memory JSON)</li>
     <li><code>PUT /api/users/:id</code> - Kullanıcıyı tamamen güncelleme (Tüm alanlar zorunlu)</li>
     <li><code>PATCH /api/users/:id</code> - Kullanıcıyı kısmi güncelleme (Sadece gönderilen alanlar)</li>
