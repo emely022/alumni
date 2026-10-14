@@ -124,6 +124,8 @@ Verinin saklanması, iş kurallarına göre modellenmesi, sorgulanması ve manip
   - Başlangıç tohum verileri (seed data) ile hazır gelir.
   - Veri yönetimini controller katmanından tamamen soyutlayarak MVC mimarisine tam uyum sağlar.
 - **Veritabanı Altyapısı (PostgreSQL):** [`backend/src/config/db.js`](backend/src/config/db.js) dosyasında Docker üzerindeki PostgreSQL servisine bağlanan `pg.Pool` bağlantı havuzu ve yeniden deneme mekanizmalı bağlantı testi hazırdır.
+- **Veri Tasarımı:** Veri yapısı ve şema detayları için bkz. [ddd.md](ddd.md).
+- **Veritabanı Migration Sistemi:** Uygulama açılışında ([`backend/src/config/migrate.js`](backend/src/config/migrate.js)), [`backend/migrations/`](backend/migrations/) klasöründeki sıralı SQL dosyalarını (`001_create_departments.sql`, `002_create_users.sql`, vb.) otomatik olarak çalıştırır. Çalıştırılan migration'lar `migrations` tablosunda kayıt altına alınarak aynı dosyanın mükerrer çalışması engellenir.
 
 ### 4. 👁️ View Katmanı (`backend/src/views/` - Görünüm ve Kullanıcı Arayüzü)
 Kullanıcıya veya istemciye sunulan çıktının oluşturulduğu bağımsız katmandır:
@@ -150,7 +152,10 @@ Kullanıcıya veya istemciye sunulan çıktının oluşturulduğu bağımsız ka
    cd alumni
    ```
 
-2. Build and start all containers with a single command:
+2. Ortam değişkenlerini yapılandırın:
+   > **Not:** Projeyi çalıştırmadan önce `.env.example` dosyasını `.env` olarak kopyalayıp değerleri doldurmak gerekir (`cp .env.example .env`).
+
+3. Build and start all containers with a single command:
    ```bash
    docker compose up
    ```

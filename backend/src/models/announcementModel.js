@@ -1,151 +1,159 @@
+const { pool } = require('../config/db');
+
 /**
- * Announcement Model (In-Memory)
+ * Announcement Model (PostgreSQL)
  * 
- * Veritabanı bağlantısı kullanılmadan, bellek üzerinde (in-memory) çalışan
- * ve CRUD (Create, Read, Update, Delete) operasyonlarını sağlayan duyuru modelidir.
+ * PostgreSQL veritabanı ile çalışan ve CRUD (Create, Read, Update, Delete)
+ * operasyonlarını sağlayan duyuru modelidir.
  */
 
-// Başlangıç örnek duyuru verileri (In-memory store)
-let announcements = [
-  {
-    id: 1,
-    title: '2026 Yıllık Mezunlar Buluşması',
-    content: 'Tüm mezunlarımızı 15 Mayıs 2026 tarihinde ana kampüsümüzde düzenlenecek geleneksel buluşmaya davet ediyoruz.',
-    category: 'Etkinlik',
-    author: 'Mezunlar Ofisi',
-    date: '2026-05-15',
-    createdAt: '2026-10-01T09:00:00.000Z',
-  },
-  {
-    id: 2,
-    title: 'Sonbahar Kariyer ve Mentorluk Günleri',
-    content: 'Yeni mezunlarımız ile sektör lideri deneyimli mezunlarımızı buluşturan mentorluk programı başvuruları başladı.',
-    category: 'Kariyer',
-    author: 'Kariyer Merkezi',
-    date: '2026-11-10',
-    createdAt: '2026-10-03T11:30:00.000Z',
-  },
-];
+// PostgreSQL satırını API ve View formatına dönüştürücü
+const formatAnnouncement = (row) => {
+  if (!row) return null;
+
+  let formattedDate = row.date;
+  if (row.date instanceof Date) {
+    formattedDate = row.date.toISOString().split('T')[0];
+  } else if (typeof row.date === 'string' && row.date.includes('T')) {
+    formattedDate = row.date.split('T')[0];
+  }
+
+  return {
+    id: row.id,
+    title: row.title,
+    content: row.content,
+    category: row.category || 'Genel',
+    author: row.author || 'Yönetim',
+    author_id: row.author_id,
+    date: formattedDate || null,
+    createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
+    updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
+  };
+};
 
 /**
  * Tüm duyuruları döner (Read - All)
- * @returns {Array} Duyurular listesi
+ * @returns {Promise<Array>} Duyurular listesi
  */
-const findAll = () => {
-  return [...announcements];
+const findAll = async () => {
+  const result = await pool.query(
+    'SELECT id, title, content, category, author, author_id, date, created_at, updated_at FROM announcements ORDER BY id ASC;'
+  );
+  return result.rows.map(formatAnnouncement);
 };
 
 /**
  * ID'ye göre duyuru arar (Read - By ID)
  * @param {number|string} id - Duyuru ID'si
- * @returns {Object|null} Duyuru nesnesi veya bulunamazsa null
+ * @returns {Promise<Object|null>} Duyuru nesnesi veya bulunamazsa null
  */
-const findById = (id) => {
+const findById = async (id) => {
   const numericId = parseInt(id, 10);
-  const announcement = announcements.find((a) => a.id === numericId);
-  return announcement ? { ...announcement } : null;
+  if (isNaN(numericId)) return null;
+
+  const result = await pool.query(
+    'SELECT id, title, content, category, author, author_id, date, created_at, updated_at FROM announcements WHERE id = $1;',
+    [numericId]
+  );
+  return result.rows.length > 0 ? formatAnnouncement(result.rows[0]) : null;
 };
 
 /**
- * Yeni bir duyuru oluşturur (Create)
+ * Yeni bir duyuru oluşturur ve veritabanına ekler (Create)
  * @param {Object} data - Duyuru bilgileri
- * @returns {Object} Oluşturulan duyuru nesnesi
+ * @returns {Promise<Object>} Oluşturulan duyuru nesnesi
  */
-const create = (data) => {
-  const { title, content, category, author, date } = data;
-  const nextId = announcements.length > 0 ? Math.max(...announcements.map((a) => a.id)) + 1 : 1;
+const create = async (data) => {
+  const { title, content, category, author, author_id, date } = data;
+  const annCategory = category || 'Genel';
+  const annAuthor = author || 'Yönetim';
+  const annDate = date || new Date().toISOString().split('T')[0];
 
-  const now = new Date();
-  const newAnnouncement = {
-    id: nextId,
-    title,
-    content,
-    category: category || 'Genel',
-    author: author || 'Yönetim',
-    date: date || now.toISOString().split('T')[0],
-    createdAt: now.toISOString(),
-  };
+  const result = await pool.query(
+    `INSERT INTO announcements (title, content, category, author, author_id, date)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING id, title, content, category, author, author_id, date, created_at, updated_at;`,
+    [title, content, annCategory, annAuthor, author_id || null, annDate]
+  );
 
-  announcements.push(newAnnouncement);
-  return { ...newAnnouncement };
+  return formatAnnouncement(result.rows[0]);
 };
 
 /**
  * Duyuruyu tamamen günceller / üzerine yazar (Update - PUT)
  * @param {number|string} id - Güncellenecek duyuru ID'si
  * @param {Object} data - Yeni duyuru bilgileri
- * @returns {Object|null} Güncellenmiş duyuru veya bulunamazsa null
+ * @returns {Promise<Object|null>} Güncellenmiş duyuru veya bulunamazsa null
  */
-const replace = (id, data) => {
+const replace = async (id, data) => {
   const numericId = parseInt(id, 10);
-  const index = announcements.findIndex((a) => a.id === numericId);
+  if (isNaN(numericId)) return null;
 
-  if (index === -1) {
-    return null;
-  }
+  const { title, content, category, author, author_id, date } = data;
+  const annCategory = category || 'Genel';
+  const annAuthor = author || 'Yönetim';
 
-  const { title, content, category, author, date } = data;
-  const updatedAnnouncement = {
-    id: numericId,
-    title,
-    content,
-    category: category || 'Genel',
-    author: author || 'Yönetim',
-    date: date || announcements[index].date,
-    createdAt: announcements[index].createdAt,
-    updatedAt: new Date().toISOString(),
-  };
+  const result = await pool.query(
+    `UPDATE announcements
+     SET title = $1, content = $2, category = $3, author = $4, author_id = $5,
+         date = COALESCE($6, date), updated_at = CURRENT_TIMESTAMP
+     WHERE id = $7
+     RETURNING id, title, content, category, author, author_id, date, created_at, updated_at;`,
+    [title, content, annCategory, annAuthor, author_id || null, date || null, numericId]
+  );
 
-  announcements[index] = updatedAnnouncement;
-  return { ...updatedAnnouncement };
+  return result.rows.length > 0 ? formatAnnouncement(result.rows[0]) : null;
 };
 
 /**
  * Duyuruyu kısmi olarak günceller (Update - PATCH)
  * @param {number|string} id - Güncellenecek duyuru ID'si
  * @param {Object} partialData - Güncellenecek alanlar
- * @returns {Object|null} Güncellenmiş duyuru veya bulunamazsa null
+ * @returns {Promise<Object|null>} Güncellenmiş duyuru veya bulunamazsa null
  */
-const update = (id, partialData) => {
+const update = async (id, partialData) => {
   const numericId = parseInt(id, 10);
-  const index = announcements.findIndex((a) => a.id === numericId);
+  if (isNaN(numericId)) return null;
 
-  if (index === -1) {
-    return null;
-  }
+  const current = await findById(numericId);
+  if (!current) return null;
 
-  const current = announcements[index];
-  const { title, content, category, author, date } = partialData;
+  const title = partialData.title !== undefined ? partialData.title : current.title;
+  const content = partialData.content !== undefined ? partialData.content : current.content;
+  const category = partialData.category !== undefined ? partialData.category : current.category;
+  const author = partialData.author !== undefined ? partialData.author : current.author;
+  const author_id = partialData.author_id !== undefined ? partialData.author_id : current.author_id;
+  const date = partialData.date !== undefined ? partialData.date : current.date;
 
-  const updatedAnnouncement = {
-    ...current,
-    ...(title !== undefined && { title }),
-    ...(content !== undefined && { content }),
-    ...(category !== undefined && { category }),
-    ...(author !== undefined && { author }),
-    ...(date !== undefined && { date }),
-    updatedAt: new Date().toISOString(),
-  };
+  const result = await pool.query(
+    `UPDATE announcements
+     SET title = $1, content = $2, category = $3, author = $4, author_id = $5,
+         date = $6, updated_at = CURRENT_TIMESTAMP
+     WHERE id = $7
+     RETURNING id, title, content, category, author, author_id, date, created_at, updated_at;`,
+    [title, content, category, author, author_id || null, date, numericId]
+  );
 
-  announcements[index] = updatedAnnouncement;
-  return { ...updatedAnnouncement };
+  return result.rows.length > 0 ? formatAnnouncement(result.rows[0]) : null;
 };
 
 /**
  * Duyuruyu ID'ye göre siler (Delete)
  * @param {number|string} id - Silinecek duyuru ID'si
- * @returns {Object|null} Silinen duyuru veya bulunamazsa null
+ * @returns {Promise<Object|null>} Silinen duyuru veya bulunamazsa null
  */
-const remove = (id) => {
+const remove = async (id) => {
   const numericId = parseInt(id, 10);
-  const index = announcements.findIndex((a) => a.id === numericId);
+  if (isNaN(numericId)) return null;
 
-  if (index === -1) {
-    return null;
-  }
+  const result = await pool.query(
+    `DELETE FROM announcements
+     WHERE id = $1
+     RETURNING id, title, content, category, author, author_id, date, created_at, updated_at;`,
+    [numericId]
+  );
 
-  const [deletedAnnouncement] = announcements.splice(index, 1);
-  return { ...deletedAnnouncement };
+  return result.rows.length > 0 ? formatAnnouncement(result.rows[0]) : null;
 };
 
 const AnnouncementModel = {

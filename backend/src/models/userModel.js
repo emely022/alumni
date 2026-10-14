@@ -1,142 +1,151 @@
+const { pool } = require('../config/db');
+
 /**
- * User Model (In-Memory)
+ * User Model (PostgreSQL)
  * 
- * Veritabanı bağlantısı kullanılmadan, bellek üzerinde (in-memory) çalışan
- * ve CRUD (Create, Read, Update, Delete) operasyonlarını sağlayan model katmanıdır.
+ * PostgreSQL veritabanı ile çalışan ve CRUD (Create, Read, Update, Delete)
+ * operasyonlarını sağlayan model katmanıdır.
  */
 
-// Başlangıç tohum verileri (In-memory data store)
-let users = [
-  {
-    id: 1,
-    name: 'Ahmet Yılmaz',
-    email: 'ahmet@alumni.edu',
-    department: 'Bilgisayar Mühendisliği',
-    graduationYear: 2022,
-  },
-  {
-    id: 2,
-    name: 'Ayşe Kaya',
-    email: 'ayse@alumni.edu',
-    department: 'Endüstri Mühendisliği',
-    graduationYear: 2023,
-  },
-];
+// PostgreSQL satırını API ve View formatına dönüştürücü
+const formatUser = (row) => {
+  if (!row) return null;
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    department: row.department,
+    department_id: row.department_id,
+    graduationYear: row.graduation_year !== null && row.graduation_year !== undefined
+      ? Number(row.graduation_year)
+      : null,
+    createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
+    updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
+  };
+};
 
 /**
  * Tüm kullanıcıları döner (Read - All)
- * @returns {Array} Kullanıcı listesi
+ * @returns {Promise<Array>} Kullanıcı listesi
  */
-const findAll = () => {
-  return [...users];
+const findAll = async () => {
+  const result = await pool.query(
+    'SELECT id, name, email, department, department_id, graduation_year, created_at, updated_at FROM users ORDER BY id ASC;'
+  );
+  return result.rows.map(formatUser);
 };
 
 /**
  * ID'ye göre kullanıcı arar (Read - By ID)
  * @param {number|string} id - Kullanıcı ID'si
- * @returns {Object|null} Kullanıcı nesnesi veya bulunamazsa null
+ * @returns {Promise<Object|null>} Kullanıcı nesnesi veya bulunamazsa null
  */
-const findById = (id) => {
+const findById = async (id) => {
   const numericId = parseInt(id, 10);
-  const user = users.find((u) => u.id === numericId);
-  return user ? { ...user } : null;
+  if (isNaN(numericId)) return null;
+
+  const result = await pool.query(
+    'SELECT id, name, email, department, department_id, graduation_year, created_at, updated_at FROM users WHERE id = $1;',
+    [numericId]
+  );
+  return result.rows.length > 0 ? formatUser(result.rows[0]) : null;
 };
 
 /**
- * Yeni bir kullanıcı oluşturur ve listeye ekler (Create)
+ * Yeni bir kullanıcı oluşturur ve veritabanına ekler (Create)
  * @param {Object} userData - Yeni kullanıcı bilgileri
- * @returns {Object} Oluşturulan kullanıcı nesnesi
+ * @returns {Promise<Object>} Oluşturulan kullanıcı nesnesi
  */
-const create = (userData) => {
-  const { name, email, department, graduationYear } = userData;
-  const nextId = users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1;
+const create = async (userData) => {
+  const { name, email, department, graduationYear, department_id } = userData;
+  const gradYear = graduationYear ? Number(graduationYear) : new Date().getFullYear();
+  const dept = department || 'Belirtilmedi';
 
-  const newUser = {
-    id: nextId,
-    name,
-    email,
-    department: department || 'Belirtilmedi',
-    graduationYear: graduationYear ? Number(graduationYear) : new Date().getFullYear(),
-    createdAt: new Date().toISOString(),
-  };
+  const result = await pool.query(
+    `INSERT INTO users (name, email, department, department_id, graduation_year)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING id, name, email, department, department_id, graduation_year, created_at, updated_at;`,
+    [name, email, dept, department_id || null, gradYear]
+  );
 
-  users.push(newUser);
-  return { ...newUser };
+  return formatUser(result.rows[0]);
 };
 
 /**
  * Kullanıcıyı tamamen günceller / üzerine yazar (Update - PUT)
  * @param {number|string} id - Güncellenecek kullanıcı ID'si
  * @param {Object} userData - Güncel kullanıcı bilgileri
- * @returns {Object|null} Güncellenmiş kullanıcı veya bulunamazsa null
+ * @returns {Promise<Object|null>} Güncellenmiş kullanıcı veya bulunamazsa null
  */
-const replace = (id, userData) => {
+const replace = async (id, userData) => {
   const numericId = parseInt(id, 10);
-  const userIndex = users.findIndex((u) => u.id === numericId);
+  if (isNaN(numericId)) return null;
 
-  if (userIndex === -1) {
-    return null;
-  }
+  const { name, email, department, graduationYear, department_id } = userData;
+  const gradYear = Number(graduationYear);
 
-  const { name, email, department, graduationYear } = userData;
-  const updatedUser = {
-    id: numericId,
-    name,
-    email,
-    department,
-    graduationYear: Number(graduationYear),
-    updatedAt: new Date().toISOString(),
-  };
+  const result = await pool.query(
+    `UPDATE users
+     SET name = $1, email = $2, department = $3, department_id = $4, graduation_year = $5, updated_at = CURRENT_TIMESTAMP
+     WHERE id = $6
+     RETURNING id, name, email, department, department_id, graduation_year, created_at, updated_at;`,
+    [name, email, department, department_id || null, gradYear, numericId]
+  );
 
-  users[userIndex] = updatedUser;
-  return { ...updatedUser };
+  return result.rows.length > 0 ? formatUser(result.rows[0]) : null;
 };
 
 /**
  * Kullanıcıyı kısmi olarak günceller (Update - PATCH)
  * @param {number|string} id - Güncellenecek kullanıcı ID'si
  * @param {Object} partialData - Güncellenecek alanlar
- * @returns {Object|null} Güncellenmiş kullanıcı veya bulunamazsa null
+ * @returns {Promise<Object|null>} Güncellenmiş kullanıcı veya bulunamazsa null
  */
-const update = (id, partialData) => {
+const update = async (id, partialData) => {
   const numericId = parseInt(id, 10);
-  const userIndex = users.findIndex((u) => u.id === numericId);
+  if (isNaN(numericId)) return null;
 
-  if (userIndex === -1) {
-    return null;
-  }
+  const current = await findById(numericId);
+  if (!current) return null;
 
-  const currentUser = users[userIndex];
-  const { name, email, department, graduationYear } = partialData;
+  const name = partialData.name !== undefined ? partialData.name : current.name;
+  const email = partialData.email !== undefined ? partialData.email : current.email;
+  const department = partialData.department !== undefined ? partialData.department : current.department;
+  const graduationYear = partialData.graduationYear !== undefined
+    ? Number(partialData.graduationYear)
+    : current.graduationYear;
+  const department_id = partialData.department_id !== undefined
+    ? partialData.department_id
+    : current.department_id;
 
-  const updatedUser = {
-    ...currentUser,
-    ...(name !== undefined && { name }),
-    ...(email !== undefined && { email }),
-    ...(department !== undefined && { department }),
-    ...(graduationYear !== undefined && { graduationYear: Number(graduationYear) }),
-    updatedAt: new Date().toISOString(),
-  };
+  const result = await pool.query(
+    `UPDATE users
+     SET name = $1, email = $2, department = $3, department_id = $4, graduation_year = $5, updated_at = CURRENT_TIMESTAMP
+     WHERE id = $6
+     RETURNING id, name, email, department, department_id, graduation_year, created_at, updated_at;`,
+    [name, email, department, department_id || null, graduationYear, numericId]
+  );
 
-  users[userIndex] = updatedUser;
-  return { ...updatedUser };
+  return result.rows.length > 0 ? formatUser(result.rows[0]) : null;
 };
 
 /**
- * Kullanıcıyı ID'ye göre listeden siler (Delete)
+ * Kullanıcıyı ID'ye göre veritabanından siler (Delete)
  * @param {number|string} id - Silinecek kullanıcı ID'si
- * @returns {Object|null} Silinen kullanıcı veya bulunamazsa null
+ * @returns {Promise<Object|null>} Silinen kullanıcı veya bulunamazsa null
  */
-const remove = (id) => {
+const remove = async (id) => {
   const numericId = parseInt(id, 10);
-  const userIndex = users.findIndex((u) => u.id === numericId);
+  if (isNaN(numericId)) return null;
 
-  if (userIndex === -1) {
-    return null;
-  }
+  const result = await pool.query(
+    `DELETE FROM users
+     WHERE id = $1
+     RETURNING id, name, email, department, department_id, graduation_year, created_at, updated_at;`,
+    [numericId]
+  );
 
-  const [deletedUser] = users.splice(userIndex, 1);
-  return { ...deletedUser };
+  return result.rows.length > 0 ? formatUser(result.rows[0]) : null;
 };
 
 const UserModel = {
