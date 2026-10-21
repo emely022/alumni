@@ -20,6 +20,8 @@ Mevcut projede yer alan modeller ve bunları destekleyen temel işlevsel tablola
 3. **`departments` (Bölümler):** Mezunların ve öğrencilerin mezun oldukları akademik birimleri normalize eden tamamlayıcı varlık.
 4. **`events` (Etkinlikler):** Mezun buluşmaları, seminerler, paneller ve kariyer günlerini yöneten etkinlik varlığı.
 5. **`event_registrations` (Etkinlik Kayıtları):** Mezunların etkinliklere katılım durumlarını takip eden çoka-çok (N-N) ilişki bağlayıcı varlığı.
+6. **`job_postings` (İş İlanları):** Mezunların ve paydaş kurumların staj, tam zamanlı veya yarı zamanlı kariyer fırsatlarını paylaştığı iş ilanları varlığı.
+7. **`applications` (İş Başvuruları):** Mezunların sistemdeki iş ilanlarına yaptıkları başvuruları, durumlarını (beklemede, incelendi, mülakat, kabul, red) ve özgeçmiş bilgilerini takip eden çoka-çok (N-N) ilişki bağlayıcı varlığı.
 
 ---
 
@@ -102,6 +104,47 @@ Mezunların etkinliklere kayıtlarını ve katılım durumlarını tutan ara (ju
 
 ---
 
+### 3.6. `job_postings` (İş İlanları Tablosu)
+Mezunlar ve işverenler tarafından paylaşılan iş, staj ve proje bazlı kariyer fırsatlarını saklar.
+
+| Alan Adı | Veri Tipi | Zorunluluk | Kısıtlar (Constraints) | Açıklama |
+|---|---|---|---|---|
+| `id` | `SERIAL` | Zorunlu | `PRIMARY KEY` | Benzersiz iş ilanı kimlik numarası |
+| `title` | `VARCHAR(255)` | Zorunlu | `NOT NULL` | Pozisyon / İlan başlığı (Örn: "Full Stack Developer", "Pazarlama Uzmanı") |
+| `company` | `VARCHAR(150)` | Zorunlu | `NOT NULL` | İlanı veren şirket veya kurum adı |
+| `location` | `VARCHAR(150)` | Opsiyonel | `NULL` | Çalışma lokasyonu (Örn: "İstanbul / Hibrit", "Ankara", "Remote") |
+| `employment_type` | `VARCHAR(50)` | Zorunlu | `NOT NULL`, `DEFAULT 'full-time'`, `CHECK (employment_type IN ('full-time', 'part-time', 'internship', 'contract', 'remote'))` | Çalışma şekli / istihdam türü |
+| `description` | `TEXT` | Zorunlu | `NOT NULL` | İş tanımı, görev ve sorumluluklar |
+| `requirements` | `TEXT` | Opsiyonel | `NULL` | Aranan nitelikler, teknik yetkinlikler ve deneyim şartları |
+| `contact_email` | `VARCHAR(255)` | Opsiyonel | `NULL` | Başvuru ve iletişim için e-posta adresi |
+| `application_url` | `VARCHAR(500)` | Opsiyonel | `NULL` | Doğrudan harici başvuru bağlantısı / kariyer portalı linki |
+| `salary_range` | `VARCHAR(100)` | Opsiyonel | `NULL` | Belirtilmişse maaş / ücret aralığı (Örn: "40.000 - 60.000 TL") |
+| `deadline` | `DATE` | Opsiyonel | `NULL` | İlanın son başvuru tarihi |
+| `is_active` | `BOOLEAN` | Zorunlu | `NOT NULL`, `DEFAULT TRUE` | İlanın aktif/yayında olup olmadığı |
+| `posted_by` | `INTEGER` | Opsiyonel | `FOREIGN KEY` ➔ `users(id)` `ON DELETE SET NULL` | İlanı oluşturan/yayınlayan mezun veya yetkili kullanıcı |
+| `department_id` | `INTEGER` | Opsiyonel | `FOREIGN KEY` ➔ `departments(id)` `ON DELETE SET NULL` | İlanın öncelikli olarak hedeflendiği akademik bölüm (opsiyonel filtreleme için) |
+| `created_at` | `TIMESTAMPTZ` | Zorunlu | `NOT NULL`, `DEFAULT CURRENT_TIMESTAMP` | İlanın sisteme eklendiği tarih ve saat |
+| `updated_at` | `TIMESTAMPTZ` | Opsiyonel | `NULL` | İlanın son güncellenme zaman damgası |
+
+---
+
+### 3.7. `applications` (İş Başvuruları Tablosu)
+Mezunların yayınlanmış iş ilanlarına yaptıkları başvuruları ve başvuru süreçlerini tutan ara tablodur.
+
+| Alan Adı | Veri Tipi | Zorunluluk | Kısıtlar (Constraints) | Açıklama |
+|---|---|---|---|---|
+| `id` | `SERIAL` | Zorunlu | `PRIMARY KEY` | Benzersiz başvuru kimlik numarası |
+| `job_posting_id` | `INTEGER` | Zorunlu | `FOREIGN KEY` ➔ `job_postings(id)` `ON DELETE CASCADE` | Başvuru yapılan iş ilanı |
+| `user_id` | `INTEGER` | Zorunlu | `FOREIGN KEY` ➔ `users(id)` `ON DELETE CASCADE` | Başvuruyu yapan mezun |
+| `resume_url` | `VARCHAR(500)` | Opsiyonel | `NULL` | Başvuruya eklenen özgeçmiş / CV bağlantısı (URL) |
+| `cover_note` | `TEXT` | Opsiyonel | `NULL` | Başvuru ön yazısı / adayın açıklaması |
+| `status` | `VARCHAR(30)` | Zorunlu | `NOT NULL`, `DEFAULT 'pending'`, `CHECK (status IN ('pending', 'reviewed', 'interview', 'accepted', 'rejected'))` | Başvuru değerlendirme durumu |
+| `applied_at` | `TIMESTAMPTZ` | Zorunlu | `NOT NULL`, `DEFAULT CURRENT_TIMESTAMP` | Başvuru yapılma zamanı |
+| `updated_at` | `TIMESTAMPTZ` | Opsiyonel | `NULL` | Başvuru durumu son güncellenme zaman damgası |
+| - | - | - | `UNIQUE (job_posting_id, user_id)` | Bir mezunun aynı ilana mükerrer başvuru yapmasını engeller |
+
+---
+
 ## 4. 🔗 Tablolar Arası İlişkiler (Entity Relationships)
 
 Sistemdeki varlıklar arasındaki ana ilişkiler ve foreign key mekanizmaları aşağıda açıklanmıştır:
@@ -127,6 +170,30 @@ Sistemdeki varlıklar arasındaki ana ilişkiler ve foreign key mekanizmaları a
    - Etkinlik veya kullanıcı silindiğinde, ilişkili katılım kaydının anlamsızlaşmaması için `ON DELETE CASCADE` kuralı uygulanır.
    - `UNIQUE(event_id, user_id)` kısıtı ile mükerrer kayıtlar engellenir.
 
+5. **`users` ➔ `job_postings` (Bire-Çok / 1:N):**
+   - Bir mezun veya yetkili birden fazla iş ilanı paylaşabilir (`1:N`).
+   - `job_postings.posted_by ➔ users.id` ilişkisi ile ilanı yayınlayan kullanıcı eşleştirilir.
+   - İlanı oluşturan kullanıcının hesabı silinse bile, ilanın sistemdeki geçmişi ve arşiv bütünlüğünü korumak adına `ON DELETE SET NULL` stratejisi uygulanır.
+
+6. **`departments` ➔ `job_postings` (Bire-Çok / 1:N - Opsiyonel Hedefleme):**
+   - Bir akademik bölüm veya fakülteye özel olarak birden fazla iş ilanı hedeflenebilir (`1:N`).
+   - `job_postings.department_id ➔ departments.id` ilişkisi ile belirli bir bölüm mezunlarına yönelik hedefli ilan filtrelemesi sağlanır.
+   - Bölüm kaydı silindiğinde ilan silinmez, yalnızca bölüm ilişkisi boşa çıkar (`ON DELETE SET NULL`).
+
+7. **`job_postings` ➔ `applications` (Bire-Çok / 1:N):**
+   - Bir iş ilanına birden fazla mezun başvurabilir (`1:N`).
+   - `applications.job_posting_id ➔ job_postings.id` ilişkisiyle ilan eşleştirilir.
+   - İlan silindiğinde ilişkili başvurular da temizlenir (`ON DELETE CASCADE`).
+
+8. **`users` ➔ `applications` (Bire-Çok / 1:N):**
+   - Bir mezun birden çok iş ilanına başvuruda bulunabilir (`1:N`).
+   - `applications.user_id ➔ users.id` ilişkisiyle başvuran mezun eşleştirilir.
+   - Kullanıcı silindiğinde başvuruları da sistemden kaldırılır (`ON DELETE CASCADE`).
+
+9. **`users` ➔ `job_postings` (Çoka-Çok / N:N - Başvuru İlişkisi):**
+   - Mezunlar ve iş ilanları arasındaki başvuru ilişkisi `applications` ara tablosu üzerinden normalize edilmiştir.
+   - `UNIQUE(job_posting_id, user_id)` kısıtı ile mükerrer başvurular engellenir.
+
 ---
 
 ## 5. 🗺️ Varlık Bağıntı Diyagramı (Mermaid ER Diagram)
@@ -134,10 +201,14 @@ Sistemdeki varlıklar arasındaki ana ilişkiler ve foreign key mekanizmaları a
 ```mermaid
 erDiagram
     DEPARTMENTS ||--o{ USERS : "has members"
+    DEPARTMENTS ||--o{ JOB_POSTINGS : "targets"
     USERS ||--o{ ANNOUNCEMENTS : "authors"
     USERS ||--o{ EVENTS : "organizes"
     USERS ||--o{ EVENT_REGISTRATIONS : "registers to"
+    USERS ||--o{ JOB_POSTINGS : "posts"
+    USERS ||--o{ APPLICATIONS : "submits"
     EVENTS ||--o{ EVENT_REGISTRATIONS : "has participants"
+    JOB_POSTINGS ||--o{ APPLICATIONS : "receives"
 
     DEPARTMENTS {
         int id PK
@@ -189,6 +260,36 @@ erDiagram
         string status
         timestamptz registration_date
     }
+
+    JOB_POSTINGS {
+        int id PK
+        string title
+        string company
+        string location
+        string employment_type
+        text description
+        text requirements
+        string contact_email
+        string application_url
+        string salary_range
+        date deadline
+        boolean is_active
+        int posted_by FK
+        int department_id FK
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    APPLICATIONS {
+        int id PK
+        int job_posting_id FK
+        int user_id FK
+        string resume_url
+        text cover_note
+        string status
+        timestamptz applied_at
+        timestamptz updated_at
+    }
 ```
 
 ---
@@ -199,9 +300,8 @@ erDiagram
    - Mevcut taslak şemada şifre (`password_hash`) alanı henüz dahil edilmemiştir.
    - İlerleyen aşamalarda `users` tablosuna `password_hash VARCHAR(255)`, `role VARCHAR(30)` (Örn: `ADMIN`, `ALUMNI`, `STUDENT`) ve `is_active BOOLEAN` alanları eklenecektir.
 
-2. **Kariyer ve Mentorluk Modülü:**
-   - Mezunların iş ilanları paylaşabilmesi için `jobs` ve `job_applications` tabloları tasarlanabilir.
-   - Yeni mezunlar ile kıdemli mezunlar arasında eşleşme sağlamak için `mentorships` tablosu eklenebilir.
+2. **Mentorluk ve Kariyer Gelişim Modülü:**
+   - Şemaya dahil edilen `job_postings` ve `applications` tablolarına ek olarak, yeni mezunlar ile kıdemli mezunlar arasında eşleşme ve kariyer rehberliği sağlamak için `mentorships` tablosu tasarlanabilir.
 
 3. **İletişim ve Gizlilik Tercihleri:**
    - Mezunların e-posta veya profil bilgilerinin diğer kullanıcılara açık olup olmayacağını yöneten `privacy_settings` alanı eklenebilir.
@@ -211,6 +311,11 @@ erDiagram
      - `CREATE INDEX idx_users_email ON users(email);`
      - `CREATE INDEX idx_announcements_date ON announcements(date DESC);`
      - `CREATE INDEX idx_events_date ON events(event_date ASC);`
+     - `CREATE INDEX idx_job_postings_active ON job_postings(is_active, created_at DESC);`
+     - `CREATE INDEX idx_job_postings_department ON job_postings(department_id);`
+     - `CREATE INDEX idx_applications_job ON applications(job_posting_id);`
+     - `CREATE INDEX idx_applications_user ON applications(user_id);`
+     - `CREATE INDEX idx_applications_status ON applications(status);`
 
 5. **In-Memory'den PostgreSQL'e Geçiş Stratejisi:**
    - Projede `pg.Pool` altyapısı [`backend/src/config/db.js`](backend/src/config/db.js) dosyasında hazır bulunmaktadır.

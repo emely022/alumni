@@ -197,4 +197,143 @@ router.put('/:id', apiUserController.updateUserPut);
 router.patch('/:id', apiUserController.updateUserPatch);
 router.delete('/:id', apiUserController.deleteUser);
 
+/**
+ * @swagger
+ * /api/users/{id}/department:
+ *   get:
+ *     summary: Kullanıcının Bölümünü Getir (Nested - N:1)
+ *     tags:
+ *       - Users (REST API)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Kullanıcının akademik bölümü
+ *       404:
+ *         description: Kullanıcı veya bölüm bulunamadı
+ */
+router.get('/:id/department', apiUserController.getUserDepartment);
+
+/**
+ * @swagger
+ * /api/users/{id}/announcements:
+ *   get:
+ *     summary: Kullanıcının Yayınladığı Duyuruları Getir (Nested - 1:N)
+ *     tags:
+ *       - Users (REST API)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Kullanıcının duyuruları
+ */
+router.get('/:id/announcements', apiUserController.getUserAnnouncements);
+
+/**
+ * @swagger
+ * /api/users/{id}/events:
+ *   get:
+ *     summary: Kullanıcının Organize Ettiği Etkinlikleri Getir (Nested - 1:N)
+ *     tags:
+ *       - Users (REST API)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Kullanıcının organize ettiği etkinlikler
+ */
+router.get('/:id/events', apiUserController.getUserOrganizedEvents);
+
+/**
+ * @swagger
+ * /api/users/{id}/registered-events:
+ *   get:
+ *     summary: Kullanıcının Kayıt Olduğu Etkinlikleri Getir (Nested - N:N)
+ *     tags:
+ *       - Users (REST API)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Kullanıcının kayıt olduğu etkinlikler
+ */
+router.get('/:id/registered-events', apiUserController.getUserRegisteredEvents);
+
+/**
+ * @swagger
+ * /api/users/{id}/job-postings:
+ *   get:
+ *     summary: Kullanıcının Yayınladığı İş İlanlarını Getir (Nested - 1:N)
+ *     tags:
+ *       - Users (REST API)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Kullanıcının iş ilanları
+ */
+router.get('/:id/job-postings', apiUserController.getUserJobPostings);
+
+/**
+ * @swagger
+ * /api/users/{id}/applications:
+ *   get:
+ *     summary: "Kullanıcının İş Başvurularını Getir (Nested - 1:N)"
+ *     tags:
+ *       - Users (REST API)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: "Kullanıcının iş başvuruları listesi"
+ *       404:
+ *         description: "Kullanıcı bulunamadı"
+ */
+router.get('/:id/applications', apiUserController.getUserApplications);
+
+/**
+ * @swagger
+ * /api/users/{id}/applied-jobs:
+ *   get:
+ *     summary: "Kullanıcının Başvurduğu İş İlanlarını Getir (Nested - N:N)"
+ *     tags:
+ *       - Users (REST API)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: "Kullanıcının başvurduğu iş ilanları listesi"
+ *       404:
+ *         description: "Kullanıcı bulunamadı"
+ */
+router.get('/:id/applied-jobs', apiUserController.getUserAppliedJobs);
+
 module.exports = router;

@@ -52,6 +52,10 @@ const getHome = (req, res) => {
     <li><a href="/api/users"><code>GET /api/users</code></a> - Kullanıcı listesi REST API (ApiUserController - JSON)</li>
     <li><a href="/announcements"><code>GET /announcements</code></a> - Duyurular listesi web sayfası (AnnouncementController - HTML)</li>
     <li><a href="/api/announcements"><code>GET /api/announcements</code></a> - Duyurular REST API (ApiAnnouncementController - JSON)</li>
+    <li><a href="/job-postings"><code>GET /job-postings</code></a> - İş ilanları web sayfası (JobPostingController - HTML)</li>
+    <li><a href="/api/job-postings"><code>GET /api/job-postings</code></a> - İş ilanları REST API (ApiJobPostingController - JSON)</li>
+    <li><a href="/applications"><code>GET /applications</code></a> - İş başvuruları web sayfası (ApplicationController - HTML)</li>
+    <li><a href="/api/applications"><code>GET /api/applications</code></a> - İş başvuruları REST API (ApiApplicationController - JSON)</li>
     <li><code>POST /api/users</code> - Yeni kullanıcı ekleme (In-Memory JSON)</li>
     <li><code>PUT /api/users/:id</code> - Kullanıcıyı tamamen güncelleme (Tüm alanlar zorunlu)</li>
     <li><code>PATCH /api/users/:id</code> - Kullanıcıyı kısmi güncelleme (Sadece gönderilen alanlar)</li>

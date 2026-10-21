@@ -210,4 +210,25 @@ router.put('/:id', apiAnnouncementController.updateAnnouncementPut);
 router.patch('/:id', apiAnnouncementController.updateAnnouncementPatch);
 router.delete('/:id', apiAnnouncementController.deleteAnnouncement);
 
+/**
+ * @swagger
+ * /api/announcements/{id}/author:
+ *   get:
+ *     summary: Duyurunun Yazarını Getir (Nested - N:1)
+ *     tags:
+ *       - Announcements (REST API)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Duyuru yazarı kullanıcı bilgisi
+ *       404:
+ *         description: Duyuru veya yazar bulunamadı
+ */
+router.get('/:id/author', apiAnnouncementController.getAnnouncementAuthor);
+
 module.exports = router;

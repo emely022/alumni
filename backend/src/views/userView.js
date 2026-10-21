@@ -274,6 +274,8 @@ const renderUsersPage = (users = [], options = {}) => {
     <a href="/about">Hakkında</a>
     <a href="/users"><strong>Mezunlar Listesi (Web)</strong></a>
     <a href="/announcements">Duyurular (Web)</a>
+    <a href="/job-postings">İş İlanları (Web)</a>
+    <a href="/applications">Başvurular (Web)</a>
     <a href="/api/users" target="_blank">JSON API (/api/users)</a>
     <a href="/api/swagger" target="_blank">Swagger Dokümantasyonu</a>
   </div>

@@ -5,6 +5,13 @@ const apiUserRoutes = require('./apiUserRoutes');
 const userRoutes = require('./userRoutes');
 const apiAnnouncementRoutes = require('./apiAnnouncementRoutes');
 const announcementRoutes = require('./announcementRoutes');
+const apiDepartmentRoutes = require('./apiDepartmentRoutes');
+const apiEventRoutes = require('./apiEventRoutes');
+const apiEventRegistrationRoutes = require('./apiEventRegistrationRoutes');
+const apiJobPostingRoutes = require('./apiJobPostingRoutes');
+const apiApplicationRoutes = require('./apiApplicationRoutes');
+const jobPostingRoutes = require('./jobPostingRoutes');
+const applicationRoutes = require('./applicationRoutes');
 
 /**
  * @swagger
@@ -78,6 +85,13 @@ router.use('/api/users', apiUserRoutes);
 router.use('/users', userRoutes);
 router.use('/api/announcements', apiAnnouncementRoutes);
 router.use('/announcements', announcementRoutes);
+router.use('/api/departments', apiDepartmentRoutes);
+router.use('/api/events', apiEventRoutes);
+router.use('/api/event-registrations', apiEventRegistrationRoutes);
+router.use('/api/job-postings', apiJobPostingRoutes);
+router.use('/job-postings', jobPostingRoutes);
+router.use('/api/applications', apiApplicationRoutes);
+router.use('/applications', applicationRoutes);
 
 /**
  * @swagger

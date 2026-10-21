@@ -156,6 +156,42 @@ const remove = async (id) => {
   return result.rows.length > 0 ? formatAnnouncement(result.rows[0]) : null;
 };
 
+// =========================================================================
+// İLİŞKİLER (RELATIONSHIPS)
+// =========================================================================
+
+/**
+ * N:1 İlişki: announcements -> users (Duyuru Yazarı)
+ * Duyurunun sistemdeki yazar kullanıcısını döner.
+ * @param {number|string} announcementId
+ * @returns {Promise<Object|null>} Kullanıcı nesnesi veya null
+ */
+const getAuthor = async (announcementId) => {
+  const numericId = parseInt(announcementId, 10);
+  if (isNaN(numericId)) return null;
+
+  const result = await pool.query(
+    `SELECT u.id, u.name, u.email, u.department, u.department_id, u.graduation_year, u.created_at, u.updated_at
+     FROM announcements a
+     JOIN users u ON a.author_id = u.id
+     WHERE a.id = $1;`,
+    [numericId]
+  );
+
+  if (result.rows.length === 0) return null;
+  const row = result.rows[0];
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    department: row.department,
+    departmentId: row.department_id,
+    graduationYear: row.graduation_year !== null ? Number(row.graduation_year) : null,
+    createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
+    updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
+  };
+};
+
 const AnnouncementModel = {
   findAll,
   findById,
@@ -164,6 +200,11 @@ const AnnouncementModel = {
   update,
   remove,
   delete: remove,
+  // İlişkisel fonksiyonlar
+  getAuthor,
+  relationships: {
+    author: { type: 'belongsTo', target: 'users', foreignKey: 'author_id' },
+  },
 };
 
 module.exports = AnnouncementModel;

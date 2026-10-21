@@ -7,6 +7,7 @@
 
 let userCounter = 1;
 let deptCounter = 1;
+let jobCounter = 1;
 
 /**
  * Department Factory
@@ -89,10 +90,36 @@ const eventRegistrationFactory = (overrides = {}) => {
   };
 };
 
+/**
+ * Job Posting Factory
+ * @param {Object} overrides 
+ * @returns {Object}
+ */
+const jobPostingFactory = (overrides = {}) => {
+  const index = jobCounter++;
+  return {
+    title: overrides.title || `Yazılım Geliştirici ${index}`,
+    company: overrides.company || `Teknoloji Şirketi ${index}`,
+    location: overrides.location || 'İstanbul / Hibrit',
+    employment_type: overrides.employment_type || overrides.employmentType || 'full-time',
+    description: overrides.description || 'Modern web ve bulut teknolojileri üzerine projeler geliştirecek ekip arkadaşı arıyoruz.',
+    requirements: overrides.requirements || 'Node.js, PostgreSQL ve Docker tecrübesi.',
+    contact_email: overrides.contact_email || overrides.contactEmail || `kariyer${index}@teknoloji.com`,
+    application_url: overrides.application_url || overrides.applicationUrl || `https://kariyer.teknoloji${index}.com/ilan`,
+    salary_range: overrides.salary_range || overrides.salaryRange || '80.000 - 120.000 TL',
+    deadline: overrides.deadline || '2026-12-31',
+    is_active: overrides.is_active !== undefined ? overrides.is_active : (overrides.isActive !== undefined ? overrides.isActive : true),
+    posted_by: overrides.posted_by !== undefined ? overrides.posted_by : (overrides.postedBy !== undefined ? overrides.postedBy : null),
+    department_id: overrides.department_id !== undefined ? overrides.department_id : (overrides.departmentId !== undefined ? overrides.departmentId : null),
+    ...overrides,
+  };
+};
+
 module.exports = {
   departmentFactory,
   userFactory,
   announcementFactory,
   eventFactory,
   eventRegistrationFactory,
+  jobPostingFactory,
 };

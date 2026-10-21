@@ -142,6 +142,31 @@ const deleteAnnouncement = async (req, res) => {
   }
 };
 
+// =========================================================================
+// İÇ İÇE (NESTED) İLİŞKİ ENDPOINT'LERİ
+// =========================================================================
+
+// GET /api/announcements/:id/author - Duyuruyu yayınlayan mezun/yetkili bilgisini döner (N:1)
+const getAnnouncementAuthor = async (req, res) => {
+  try {
+    const announcementId = parseInt(req.params.id, 10);
+    const announcement = await AnnouncementModel.findById(announcementId);
+
+    if (!announcement) {
+      return res.status(404).json({ error: 'Duyuru bulunamadı' });
+    }
+
+    const author = await AnnouncementModel.getAuthor(announcementId);
+    if (!author) {
+      return res.status(404).json({ error: 'Bu duyuru için sistemde kayıtlı bir yazar kullanıcısı bulunamadı' });
+    }
+
+    return res.status(200).json(author);
+  } catch (err) {
+    return res.status(500).json({ error: 'Duyuru yazarı alınırken hata oluştu.' });
+  }
+};
+
 const ApiAnnouncementController = {
   getAnnouncements,
   getAnnouncementById,
@@ -149,6 +174,8 @@ const ApiAnnouncementController = {
   updateAnnouncementPut,
   updateAnnouncementPatch,
   deleteAnnouncement,
+  // Nested
+  getAnnouncementAuthor,
 };
 
 module.exports = {

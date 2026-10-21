@@ -288,6 +288,8 @@ const renderAnnouncementsPage = (announcements = [], options = {}) => {
     <a href="/about">Hakkında</a>
     <a href="/users">Mezunlar (Web)</a>
     <a href="/announcements"><strong>Duyurular (Web)</strong></a>
+    <a href="/job-postings">İş İlanları (Web)</a>
+    <a href="/applications">Başvurular (Web)</a>
     <a href="/api/announcements" target="_blank">JSON API (/api/announcements)</a>
     <a href="/api/swagger" target="_blank">Swagger Dokümantasyonu</a>
   </div>

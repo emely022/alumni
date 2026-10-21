@@ -14,6 +14,7 @@ const {
   announcementFactory,
   eventFactory,
   eventRegistrationFactory,
+  jobPostingFactory,
 } = require('./factories');
 
 /**
@@ -245,6 +246,9 @@ const seedDatabase = async () => {
       console.log(`   + [Registration] #${row.id} - Event #${row.event_id} ➔ User #${row.user_id} (${row.status})`);
     }
 
+    // 7. Job Postings Seed
+    await seedJobPostings(pool, { departmentMap, userMap });
+
     console.log('\n✨ Tüm seed verileri veritabanına başarıyla yüklendi!');
   } catch (err) {
     console.error('\n❌ Seed işlemi sırasında hata oluştu:', err);
@@ -254,11 +258,176 @@ const seedDatabase = async () => {
   }
 };
 
+/**
+ * Job Postings Seed Runner
+ * Hem seedDatabase içinden hem de bağımsız olarak çalıştırılabilir.
+ * @param {Object} [customPool] - pg Pool nesnesi
+ * @param {Object} [mappings] - { departmentMap, userMap }
+ */
+const seedJobPostings = async (customPool = pool, mappings = {}) => {
+  let { departmentMap, userMap } = mappings;
+
+  // Harici/bağımsız çağrıldıysa veritabanındaki mevcut kayıtları eşleştir
+  if (!departmentMap) {
+    departmentMap = {};
+    const deptRes = await customPool.query('SELECT id, name FROM departments;');
+    deptRes.rows.forEach(r => { departmentMap[r.name] = r.id; });
+  }
+
+  if (!userMap) {
+    userMap = {};
+    const userRes = await customPool.query('SELECT id, email FROM users;');
+    userRes.rows.forEach(r => { userMap[r.email] = r.id; });
+  }
+
+  console.log('\n💼 İş İlanları (job_postings) ekleniyor...');
+  const jobPostingDefinitions = [
+    jobPostingFactory({
+      title: 'Kıdemli Full Stack Geliştirici',
+      company: 'Trendyol Tech',
+      location: 'İstanbul / Hibrit',
+      employment_type: 'full-time',
+      description: 'E-ticaret platformumuzun mikroservis mimarisine katkı sağlayacak, yüksek trafikli sistemlerde tecrübeli yazılım mühendisi arıyoruz.',
+      requirements: 'Node.js, PostgreSQL, Docker, Redis ve en az 3 yıl yazılım geliştirme deneyimi.',
+      contact_email: 'tech-careers@trendyol.com',
+      application_url: 'https://trendyol.com/careers/senior-fullstack',
+      salary_range: '90.000 - 130.000 TL',
+      deadline: '2026-11-30',
+      is_active: true,
+      posted_by: userMap['ahmet@alumni.edu'] || Object.values(userMap)[0] || null,
+      department_id: departmentMap['Bilgisayar Mühendisliği'] || Object.values(departmentMap)[0] || null,
+    }),
+    jobPostingFactory({
+      title: 'Veri Analisti ve İş Zekası Uzmanı',
+      company: 'Getir',
+      location: 'İstanbul / Maslak',
+      employment_type: 'full-time',
+      description: 'Operasyonel verilerin analizi, KPI panolarının hazırlanması ve karar destek modellerinin geliştirilmesinden sorumlu olunacaktır.',
+      requirements: 'SQL, Python/R, Tableau/PowerBI bilgisi ve analitik düşünme yeteneği.',
+      contact_email: 'bi-jobs@getir.com',
+      application_url: 'https://getir.com/careers/data-analyst',
+      salary_range: '75.000 - 100.000 TL',
+      deadline: '2026-12-15',
+      is_active: true,
+      posted_by: userMap['ayse@alumni.edu'] || Object.values(userMap)[1] || null,
+      department_id: departmentMap['Endüstri Mühendisliği'] || Object.values(departmentMap)[1] || null,
+    }),
+    jobPostingFactory({
+      title: 'Frontend Geliştirici (React / Vue)',
+      company: 'Insider',
+      location: 'Uzaktan (Remote)',
+      employment_type: 'remote',
+      description: 'Global SaaS ürünlerimizin kullanıcı arayüzlerini ve web deneyimlerini geliştirecek yazılımcılar arıyoruz.',
+      requirements: 'JavaScript (ES6+), React.js veya Vue.js, TailwindCSS ve REST API entegrasyon tecrübesi.',
+      contact_email: 'talent@useinsider.com',
+      application_url: 'https://useinsider.com/careers/frontend-dev',
+      salary_range: '80.000 - 110.000 TL',
+      deadline: '2026-10-31',
+      is_active: true,
+      posted_by: userMap['zeynep.celik@alumni.edu'] || Object.values(userMap)[2] || null,
+      department_id: departmentMap['Bilgisayar Mühendisliği'] || Object.values(departmentMap)[0] || null,
+    }),
+    jobPostingFactory({
+      title: 'Yazılım Mühendisliği Stajyeri',
+      company: 'Peak Games',
+      location: 'İstanbul / Levent',
+      employment_type: 'internship',
+      description: 'Mobil oyun ve backend servisleri geliştirme süreçlerinde yer alacak yetenekli stajyerler aranmaktadır.',
+      requirements: 'Üniversitelerin ilgili mühendislik bölümlerinde son sınıf veya yeni mezun, temel algoritma ve OOP bilgisi.',
+      contact_email: 'internship@peak.com',
+      application_url: 'https://peak.com/internship-2026',
+      salary_range: '30.000 - 45.000 TL',
+      deadline: '2026-06-30',
+      is_active: true,
+      posted_by: userMap['mehmet.demir@alumni.edu'] || Object.values(userMap)[3] || null,
+      department_id: departmentMap['Bilgisayar Mühendisliği'] || Object.values(departmentMap)[0] || null,
+    }),
+    jobPostingFactory({
+      title: 'Ürün Yöneticisi (Product Manager)',
+      company: 'Hepsiburada',
+      location: 'İstanbul / Şişli',
+      employment_type: 'full-time',
+      description: 'Müşteri odaklı dijital ürünlerimizin vizyon, yol haritası ve geliştirme süreçlerini yönetecek ürün lideri.',
+      requirements: 'Agile/Scrum metodolojileri, pazar analizi ve en az 2 yıl ürün yönetimi deneyimi.',
+      contact_email: 'jobs@hepsiburada.com',
+      application_url: 'https://hepsiburada.com/careers/product-manager',
+      salary_range: '85.000 - 120.000 TL',
+      deadline: '2026-11-20',
+      is_active: true,
+      posted_by: userMap['canan.ozturk@alumni.edu'] || Object.values(userMap)[4] || null,
+      department_id: departmentMap['İşletme'] || Object.values(departmentMap)[3] || null,
+    }),
+  ];
+
+  const jobPostingIds = [];
+  for (const jp of jobPostingDefinitions) {
+    const existing = await customPool.query(
+      'SELECT id FROM job_postings WHERE title = $1 AND company = $2 LIMIT 1;',
+      [jp.title, jp.company]
+    );
+    let jpId;
+    if (existing.rows.length > 0) {
+      jpId = existing.rows[0].id;
+      await customPool.query(
+        `UPDATE job_postings
+         SET location = $1, employment_type = $2, description = $3, requirements = $4,
+             contact_email = $5, application_url = $6, salary_range = $7, deadline = $8,
+             is_active = $9, posted_by = $10, department_id = $11, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $12;`,
+        [
+          jp.location, jp.employment_type, jp.description, jp.requirements,
+          jp.contact_email, jp.application_url, jp.salary_range, jp.deadline,
+          jp.is_active, jp.posted_by, jp.department_id, jpId
+        ]
+      );
+      console.log(`   * [Job Posting Güncellendi] #${jpId} - ${jp.title} @ ${jp.company}`);
+    } else {
+      const res = await customPool.query(
+        `INSERT INTO job_postings (
+           title, company, location, employment_type, description, requirements,
+           contact_email, application_url, salary_range, deadline, is_active,
+           posted_by, department_id
+         )
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+         RETURNING id;`,
+        [
+          jp.title, jp.company, jp.location, jp.employment_type, jp.description, jp.requirements,
+          jp.contact_email, jp.application_url, jp.salary_range, jp.deadline, jp.is_active,
+          jp.posted_by, jp.department_id
+        ]
+      );
+      jpId = res.rows[0].id;
+      console.log(`   + [Job Posting] #${jpId} - ${jp.title} @ ${jp.company}`);
+    }
+    jobPostingIds.push(jpId);
+  }
+
+  return jobPostingIds;
+};
+
 // Doğrudan çalıştırıldığında fonksiyonu çağır
 if (require.main === module) {
-  seedDatabase();
+  const args = process.argv.slice(2);
+  if (args.includes('job-postings') || args.includes('job_postings') || args.includes('--job-postings')) {
+    (async () => {
+      try {
+        console.log('📌 Migration kontrolü yapılıyor...');
+        await runMigrations();
+        await seedJobPostings(pool);
+        console.log('\n✨ İş ilanları seed işlemi başarıyla tamamlandı!');
+      } catch (err) {
+        console.error('\n❌ İş ilanları seed işlemi sırasında hata oluştu:', err);
+        process.exitCode = 1;
+      } finally {
+        await pool.end();
+      }
+    })();
+  } else {
+    seedDatabase();
+  }
 }
 
 module.exports = {
   seedDatabase,
+  seedJobPostings,
 };
