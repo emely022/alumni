@@ -1,13 +1,13 @@
 # 📊 Alumni Tracking System - Veri Tasarım Dokümanı (Data Design Documentation - DDD)
 
-Bu doküman, **Alumni Tracking System** projesinin ilişkisel veri tabanı şemasının (PostgreSQL) ilk mimari taslağını sunmaktadır.
+Bu doküman, **Alumni Tracking System** projesinin PostgreSQL ilişkisel veri tabanı şemasını, tablolar arası ilişkileri ve iş/doğrulama kurallarını sunmaktadır.
 
 ---
 
 ## 1. 🎯 Dokümanın Amacı ve Statüsü
 
-- **Amaç:** Mevcut durumda bellek üzerinde (in-memory) bağımsız olarak çalışan veri yapılarını (`userModel.js`, `announcementModel.js`), gerçek dünya ilişkisel veritabanı (RDBMS - PostgreSQL) standartlarına uyumlu hale getirmek, veri bütünlüğünü garanti altına almak ve gelecekteki veritabanı entegrasyonu için rehber oluşturmaktır.
-- **Statü:** **İlk Taslak (Draft v0.1)**. Sistemin tüm bileşenlerini kapsama iddiasında değildir; temel varlıkları ve bu varlıklar arasındaki ilişkileri detaylı ve tutarlı biçimde ortaya koymayı amaçlar.
+- **Amaç:** Sistemdeki tüm varlıkların (`departments`, `users`, `announcements`, `events`, `event_registrations`, `job_postings`, `applications`) PostgreSQL ilişkisel veritabanı (RDBMS) şema standartlarını, referans bütünlüğünü, sıralı SQL migration (`backend/migrations/`), seed (`backend/seeds/`) ve alan doğrulama kurallarını (domain rules) tek merkezde dokümante etmektir.
+- **Statü:** **Güncel Mimari & Domain Tasarımı (v1.0)**. Tüm çekirdek tablolar PostgreSQL migration scriptleri, veri modelleri (`backend/src/models/`) ve doğrulama kuralları (Bölüm 6) ile birlikte tanımlanmıştır.
 
 ---
 
@@ -110,16 +110,16 @@ Mezunlar ve işverenler tarafından paylaşılan iş, staj ve proje bazlı kariy
 | Alan Adı | Veri Tipi | Zorunluluk | Kısıtlar (Constraints) | Açıklama |
 |---|---|---|---|---|
 | `id` | `SERIAL` | Zorunlu | `PRIMARY KEY` | Benzersiz iş ilanı kimlik numarası |
-| `title` | `VARCHAR(255)` | Zorunlu | `NOT NULL` | Pozisyon / İlan başlığı (Örn: "Full Stack Developer", "Pazarlama Uzmanı") |
-| `company` | `VARCHAR(150)` | Zorunlu | `NOT NULL` | İlanı veren şirket veya kurum adı |
-| `location` | `VARCHAR(150)` | Opsiyonel | `NULL` | Çalışma lokasyonu (Örn: "İstanbul / Hibrit", "Ankara", "Remote") |
+| `title` | `VARCHAR(120)` | Zorunlu | `NOT NULL`, `CHECK (char_length(trim(title)) BETWEEN 3 AND 120)` | Pozisyon / İlan başlığı (Zorunlu, boşluk temizlendikten sonra en az 3, en fazla 120 karakter) |
+| `company` | `VARCHAR(150)` | Zorunlu | `NOT NULL`, `CHECK (char_length(trim(company)) BETWEEN 2 AND 150)` | İlanı veren şirket veya kurum adı (Zorunlu, en fazla 150 karakter) |
+| `city` | `VARCHAR(100)` | Opsiyonel | `NULL` | Çalışma şehri / lokasyonu (Opsiyonel; Örn: "İstanbul", "Ankara", "Remote" — mevcut `006` migration şemasında `location` sütunuyla eşleşir) |
 | `employment_type` | `VARCHAR(50)` | Zorunlu | `NOT NULL`, `DEFAULT 'full-time'`, `CHECK (employment_type IN ('full-time', 'part-time', 'internship', 'contract', 'remote'))` | Çalışma şekli / istihdam türü |
-| `description` | `TEXT` | Zorunlu | `NOT NULL` | İş tanımı, görev ve sorumluluklar |
-| `requirements` | `TEXT` | Opsiyonel | `NULL` | Aranan nitelikler, teknik yetkinlikler ve deneyim şartları |
-| `contact_email` | `VARCHAR(255)` | Opsiyonel | `NULL` | Başvuru ve iletişim için e-posta adresi |
-| `application_url` | `VARCHAR(500)` | Opsiyonel | `NULL` | Doğrudan harici başvuru bağlantısı / kariyer portalı linki |
+| `description` | `TEXT` | Opsiyonel | `NULL` | İş tanımı, görev ve sorumluluklar (Opsiyonel; girildiğinde en fazla 5.000 karakter) |
+| `requirements` | `TEXT` | Opsiyonel | `NULL` | Aranan nitelikler, teknik yetkinlikler ve deneyim şartları (En fazla 3.000 karakter) |
+| `contact_email` | `VARCHAR(255)` | Opsiyonel | `NULL` | Başvuru ve iletişim için e-posta adresi (Girildiğinde geçerli e-posta formatında olmalı) |
+| `application_url` | `VARCHAR(500)` | Opsiyonel | `NULL` | Doğrudan harici başvuru bağlantısı (Girildiğinde `http://` veya `https://` ile başlamalı) |
 | `salary_range` | `VARCHAR(100)` | Opsiyonel | `NULL` | Belirtilmişse maaş / ücret aralığı (Örn: "40.000 - 60.000 TL") |
-| `deadline` | `DATE` | Opsiyonel | `NULL` | İlanın son başvuru tarihi |
+| `deadline` | `DATE` | Opsiyonel | `NULL` | İlanın son başvuru tarihi (Yeni kayıtlarda geçmiş bir tarih olamaz) |
 | `is_active` | `BOOLEAN` | Zorunlu | `NOT NULL`, `DEFAULT TRUE` | İlanın aktif/yayında olup olmadığı |
 | `posted_by` | `INTEGER` | Opsiyonel | `FOREIGN KEY` ➔ `users(id)` `ON DELETE SET NULL` | İlanı oluşturan/yayınlayan mezun veya yetkili kullanıcı |
 | `department_id` | `INTEGER` | Opsiyonel | `FOREIGN KEY` ➔ `departments(id)` `ON DELETE SET NULL` | İlanın öncelikli olarak hedeflendiği akademik bölüm (opsiyonel filtreleme için) |
@@ -263,11 +263,11 @@ erDiagram
 
     JOB_POSTINGS {
         int id PK
-        string title
-        string company
-        string location
+        string title "NOT NULL, max 120"
+        string company "NOT NULL"
+        string city "opsiyonel"
         string employment_type
-        text description
+        text description "opsiyonel"
         text requirements
         string contact_email
         string application_url
@@ -294,7 +294,101 @@ erDiagram
 
 ---
 
-## 6. 📌 Varsayımlar ve İleride Genişletilecek Alanlar
+## 6. 🛡️ İş ve Doğrulama Kuralları (Domain & Validation Rules)
+
+Bu bölüm, sistemdeki tüm varlıkların veri bütünlüğünü, iş mantığını (business logic) ve API/Web doğrulama standartlarını tanımlayan alan (domain) kurallarını içerir.
+
+### 6.1. Genel (Tüm Varlıklar İçin Ortak) Kurallar
+1. **Boşluk Temizleme (Whitespace Normalization):** Tüm metin alanlarında (`title`, `company`, `name`, `city`, vb.) kaydetme öncesi baştaki ve sondaki boşluklar (`trim`) temizlenir; yalnızca boşluk karakterlerinden oluşan girdiler boş kabul edilerek zorunlu alan kontrolünden geçirilir.
+2. **Güvenli URL Kuralı:** Harici bağlantı barındıran tüm URL alanları (`application_url`, `resume_url`) yalnızca `http://` veya `https://` protokolü ile başlamalıdır (`javascript:`, `data:` vb. güvensiz şemalar kabul edilmez).
+3. **E-Posta Normalizasyonu:** Tüm e-posta alanları geçerli e-posta formatına (`yerel@alan.uzantı`) uymalı ve tutarlılık için küçük harfe (`lowercase`) çevrilerek saklanmalıdır.
+4. **Zaman Damgası Bütünlüğü:** `created_at` ve `applied_at` alanları kayıt oluşturma anında sistem tarafından UTC (`TIMESTAMPTZ`) olarak atanır ve dışarıdan değiştirilemez; `updated_at` ise yalnızca güncelleme işlemlerinde güncellenir.
+5. **Sayfa Dışı / API Tutarlılığı:** İlişkisel (`FOREIGN KEY`) bir alana geçersiz veya sistemde bulunmayan bir ID gönderildiğinde `400 Bad Request` / `404 Not Found` veya referans hatası dönülmelidir; veritabanında yetim (orphan) kayıt oluşmasına izin verilmez.
+
+---
+
+### 6.2. `job_postings` (İş İlanları) Kuralları
+
+#### A. Alan Zorunluluk ve Doğrulama Kuralları
+1. **`title` (İlan Başlığı) — Zorunlu & Uzunluk Sınırı:**
+   - Boş bırakılamaz (`NOT NULL`), yalnızca boşluklardan oluşamaz.
+   - `trim` işlemi sonrasında **en az 3**, **en fazla 120 karakter** uzunluğunda olmalıdır (`VARCHAR(120)`).
+2. **`company` (Şirket / Kurum Adı) — Zorunlu:**
+   - Boş bırakılamaz (`NOT NULL`), yalnızca boşluklardan oluşamaz.
+   - `trim` işlemi sonrasında **en az 2**, **en fazla 150 karakter** uzunluğunda olmalıdır.
+3. **`city` (Şehir / Çalışma Lokasyonu) — Opsiyonel:**
+   - Girilmesi zorunlu değildir (`NULL` olabilir; örn. tamamen uzaktan veya şehir belirtilmeyen ilanlar için).
+   - Girilmesi halinde `trim` sonrasında **en az 2**, **en fazla 100 karakter** uzunluğunda olmalıdır. *(Not: Mevcut `006` SQL migration dosyasında bu alan `location` olarak adlandırılmıştır.)*
+4. **`description` (İş Tanımı) — Opsiyonel:**
+   - Girilmesi zorunlu değildir (`NULL` olabilir; yalnızca başlık, şirket ve özet/link ile hızlı ilan girilebilmesine izin verir).
+   - Girilmesi halinde anlamlı içerik bütünlüğü için **en fazla 5.000 karakter** ile sınırlandırılır.
+5. **`employment_type` (Çalışma Türü) — Zorunlu & Kısıtlı Değer:**
+   - Boş bırakılırsa varsayılan olarak `'full-time'` atanır.
+   - Yalnızca şu 5 değerden birini alabilir: `'full-time'`, `'part-time'`, `'internship'`, `'contract'`, `'remote'`.
+6. **`requirements` (Aday Kriterleri) — Opsiyonel:**
+   - Opsiyoneldir; girilmesi durumunda **en fazla 3.000 karakter** olabilir.
+7. **`contact_email` (İletişim E-Postası) — Opsiyonel & Format:**
+   - Opsiyoneldir; girildiği takdirde geçerli e-posta formatında olmalı ve **255 karakteri** geçmemelidir.
+8. **`application_url` (Harici Başvuru Linki) — Opsiyonel & Format:**
+   - Opsiyoneldir; girildiği takdirde `http://` veya `https://` ile başlayan geçerli bir URL olmalı ve **500 karakteri** geçmemelidir.
+9. **`salary_range` (Maaş Aralığı) — Opsiyonel:**
+   - Opsiyoneldir; girilmesi durumunda **en fazla 100 karakter** olabilir.
+10. **`deadline` (Son Başvuru Tarihi) — Opsiyonel & Tarih Kuralı:**
+    - Opsiyoneldir (`NULL` ise ilan süresiz kabul edilir).
+    - Girildiğinde geçerli `YYYY-MM-DD` tarih formatında olmalıdır.
+    - **Geçmiş Tarih Yasağı:** Yeni ilan oluşturma sırasında veya son başvuru tarihi güncellenirken bugünden önceki bir tarih (`deadline < CURRENT_DATE`) kabul edilmez.
+
+#### B. İş Mantığı ve Yaşam Döngüsü Kuralları
+11. **Varsayılan Aktiflik:** Yeni eklenen her ilan, aksi belirtilmedikçe `is_active = TRUE` olarak yayına alınır.
+12. **Süresi Dolmuş İlan Kuralı:** `deadline` tarihi geçmiş (`deadline < CURRENT_DATE`) veya `is_active = FALSE` durumundaki ilanlar "kapalı/süresi dolmuş" kabul edilir; bu ilanlara yeni başvuru alınmaz.
+13. **Referans Geçerliliği:** `posted_by` belirtilmişse `users` tablosunda, `department_id` belirtilmişse `departments` tablosunda mevcut bir kayda işaret etmelidir.
+14. **Mükerrer İlan Önleme (Anti-Spam Önerisi):** Aynı şirket (`company`) ve aynı başlık (`title`) altında hâlihazırda aktif olan birebir aynı ilanın kısa süre içinde tekrarlanmaması önerilir.
+15. **Arşiv ve Kaskad Silme Kuralı:** İlanı paylaşan kullanıcı sistemden silinse bile ilan kaydı silinmez (`posted_by = NULL` yapılır); ancak ilanın kendisi silindiğinde ona bağlı tüm başvurular (`applications`) otomatik olarak silinir (`ON DELETE CASCADE`).
+
+---
+
+### 6.3. `applications` (İş Başvuruları) Kuralları
+1. **Zorunlu İlişkisel Alanlar:** `job_posting_id` ve `user_id` zorunludur ve veritabanında geçerli kayıtlara karşılık gelmelidir.
+2. **Tekil Başvuru Kuralı (Duplicate Guard):** Bir mezun aynı iş ilanına yalnızca bir kez başvurabilir (`UNIQUE(job_posting_id, user_id)`).
+3. **Açık İlan Şartı:** Yalnızca `is_active = TRUE` olan ve son başvuru tarihi (`deadline`) henüz geçmemiş olan ilanlara yeni başvuru oluşturulabilir.
+4. **Kendi İlanına Başvuru Engeli:** İlanı yayınlayan kullanıcının (`job_postings.posted_by`), kendi yayınladığı ilana aday olarak başvurmasına izin verilmemesi önerilir.
+5. **Özgeçmiş ve Ön Yazı Sınırları:**
+   - `resume_url`: Opsiyoneldir; girilirse geçerli `http://` veya `https://` URL formatında ve en fazla **500 karakter** olmalıdır.
+   - `cover_note`: Opsiyoneldir; girilirse **en fazla 2.000 karakter** olabilir.
+6. **Durum (Status) ve Geçiş Kuralları:**
+   - Yeni oluşturulan başvurular varsayılan olarak `'pending'` durumunda başlar.
+   - İzin verilen durumlar: `'pending'`, `'reviewed'`, `'interview'`, `'accepted'`, `'rejected'`.
+   - Nihai sonuca (`'accepted'` veya `'rejected'`) ulaşmış başvuruların durumu iş akışı gereği geriye dönük `'pending'` durumuna çekilemez.
+
+---
+
+### 6.4. `users` ve `departments` Kuralları
+1. **`departments` (Bölümler):**
+   - `name` zorunlu (2–100 karakter) ve benzersizdir.
+   - `code` zorunlu (2–20 karakter) ve benzersizdir; büyük harf/alfanümerik kısa kod formatında (`CENG`, `IE`, vb.) tutulmalıdır.
+   - `faculty` zorunlu (2–100 karakter) olmalıdır.
+2. **`users` (Mezunlar / Kullanıcılar):**
+   - `name` zorunlu (2–100 karakter, yalnızca boşluk olamaz).
+   - `email` zorunlu, geçerli e-posta formatında, en fazla 255 karakter ve sistem genelinde benzersizdir.
+   - `graduation_year` zorunlu bir tam sayıdır ve **`1950` ile `2100` arasında** olmalıdır.
+   - `department_id` opsiyoneldir; verildiğinde geçerli bir `departments.id` değerine işaret etmelidir.
+
+---
+
+### 6.5. `announcements`, `events` ve `event_registrations` Kuralları
+1. **`announcements` (Duyurular):**
+   - `title` zorunlu (3–255 karakter), `content` zorunlu (boş olamaz, en fazla 10.000 karakter), `category` zorunlu (varsayılan `'Genel'`, en fazla 50 karakter), `author` zorunlu (varsayılan `'Yönetim'`, en fazla 100 karakter), `date` zorunludur (varsayılan `CURRENT_DATE`).
+2. **`events` (Etkinlikler):**
+   - `title` zorunlu (3–255 karakter), `description` zorunlu, `location` zorunlu (en fazla 255 karakter), `event_date` zorunludur (yeni etkinlik oluştururken geçmiş tarihli olmamalıdır).
+   - `capacity` opsiyoneldir; belirtilirse pozitif tam sayı (`> 0`) olmalıdır.
+3. **`event_registrations` (Etkinlik Kayıtları):**
+   - Bir kullanıcı aynı etkinliğe tek sefer kayıt olabilir (`UNIQUE(event_id, user_id)`).
+   - `status` yalnızca `'registered'`, `'attended'`, `'cancelled'` değerlerinden birini alabilir (varsayılan `'registered'`).
+   - Etkinlik için `capacity` tanımlanmışsa ve aktif `'registered'` katılımcı sayısı kapasite sınırına ulaşmışsa yeni `'registered'` kaydı kabul edilmez.
+
+---
+
+## 7. 📌 Varsayımlar ve İleride Genişletilecek Alanlar
 
 1. **Kimlik Doğrulama ve Güvenlik (Auth & Password Hashing):**
    - Mevcut taslak şemada şifre (`password_hash`) alanı henüz dahil edilmemiştir.
@@ -317,6 +411,10 @@ erDiagram
      - `CREATE INDEX idx_applications_user ON applications(user_id);`
      - `CREATE INDEX idx_applications_status ON applications(status);`
 
-5. **In-Memory'den PostgreSQL'e Geçiş Stratejisi:**
-   - Projede `pg.Pool` altyapısı [`backend/src/config/db.js`](backend/src/config/db.js) dosyasında hazır bulunmaktadır.
-   - Migration aracı (Knex, Prisma veya düz `.sql` scriptleri) belirlendikten sonra bu şema otomatik tablolar olarak ayağa kaldırılacaktır.
+5. **PostgreSQL Geçişi, Migration ve Seed Altyapısı:**
+   - Projede `pg.Pool` bağlantı havuzu [`backend/src/config/db.js`](backend/src/config/db.js) üzerinde yapılandırılmış ve aktif edilmiştir.
+   - `001`–`007` arası sıralı `.sql` migration dosyaları [`backend/migrations/`](backend/migrations/) dizininde yer almakta ve [`backend/src/config/migrate.js`](backend/src/config/migrate.js) tarafından uygulama açılışında otomatik olarak uygulanmaktadır (`migrations` takip tablosu ile idempotent şekilde).
+   - Başlangıç ve test verileri için factory tabanlı seed altyapısı [`backend/seeds/`](backend/seeds/) altında çalışmaktadır.
+
+6. **Uygulama Katmanı Gözlemlenebilirlik ve Hata Loglama:**
+   - Route/metod uyuşmazlıkları (`404 Guardian`) ve sunucu/veritabanı katmanı hataları (`5xx Guardian`, `pg` `AggregateError` dahil) uygulama katmanında [`backend/src/utils/errorLogger.js`](backend/src/utils/errorLogger.js) aracılığıyla `backend/logs/error.logs` dosyasına kaydedilir.

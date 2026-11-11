@@ -233,6 +233,22 @@ const getHealth = async (req, res) => {
   });
 };
 
+const { notFoundView } = require('../views');
+
+/**
+ * Generic 404 hata sayfasını render eder.
+ * Geçersiz route'lardan redirect edilen istekleri HTTP 404 durum kodu ile karşılar.
+ */
+const getNotFoundPage = (req, res) => {
+  const path = typeof req.query.path === 'string' ? req.query.path : '/404';
+  const method = typeof req.query.method === 'string' ? req.query.method : req.method;
+  const reason =
+    typeof req.query.reason === 'string' ? req.query.reason : undefined;
+
+  const html = notFoundView.renderNotFoundPage({ path, method, reason });
+  return res.status(404).send(html);
+};
+
 module.exports = {
   getHome,
   getAbout,
@@ -240,6 +256,7 @@ module.exports = {
   getHelloWithName,
   getSum,
   getHealth,
+  getNotFoundPage,
 };
 
 

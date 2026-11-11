@@ -175,4 +175,37 @@ router.get('/hello/:name', homeController.getHelloWithName);
  */
 router.get('/sum/:number1/:number2', homeController.getSum);
 
+/**
+ * @swagger
+ * /404:
+ *   get:
+ *     summary: "Genel 404 sayfası"
+ *     description: "Tanımlı olmayan route'lardan yönlendirilen istekler için generic 404 HTML sayfasını döndürür."
+ *     tags: [Genel]
+ *     parameters:
+ *       - in: query
+ *         name: path
+ *         schema:
+ *           type: string
+ *         description: "Bulunamayan istek yolu"
+ *       - in: query
+ *         name: method
+ *         schema:
+ *           type: string
+ *         description: "İstek HTTP metodu"
+ *       - in: query
+ *         name: reason
+ *         schema:
+ *           type: string
+ *         description: "404 nedeni"
+ *     responses:
+ *       404:
+ *         description: "Generic 404 hata sayfası HTML yanıtı"
+ *         content:
+ *           text/html:
+ *             schema:
+ *               type: string
+ */
+router.get('/404', homeController.getNotFoundPage);
+
 module.exports = router;

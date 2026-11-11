@@ -10,12 +10,16 @@ const express = require('express');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 const routes = require('./routes');
+const requestLogger = require('./middlewares/logger');
+const notFoundGuardian = require('./middlewares/notFoundGuardian');
+const serverErrorGuardian = require('./middlewares/serverErrorGuardian');
 const { testDbConnection } = require('./config/db');
 const { runMigrations } = require('./config/migrate');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(requestLogger);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -23,6 +27,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/swagger', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/', routes);
+
+// 404 Guardian Middleware: Tanımlı olmayan rotalar için nedenini açıklayan 404 yanıtı
+app.use(notFoundGuardian);
+
+// 5xx Guardian Middleware: Sunucu taraflı hataları yakalayıp nedenini açıklayan 500 JSON yanıtı
+app.use(serverErrorGuardian);
 
 app.listen(PORT, async () => {
   console.log(`Server is running on port ${PORT}`);

@@ -15,7 +15,11 @@ The project grows week by week, following the course structure — starting with
 - **Career & Job Postings** — publish, browse, and filter job/internship postings with company, location, employment type, salary range, and target department.
 - **Job Applications** — submit and track applications with resume links, cover notes, and multi-stage status tracking (pending, reviewed, interview, accepted, rejected).
 - **Interactive Swagger Documentation** — explore and test all RESTful and nested endpoints via Swagger UI at `/api/swagger`.
-- **Server-Side Rendered Web UI** — user-friendly, responsive HTML interface for managing users, announcements, job postings, and applications.
+- **Server-Side Rendered Web UI** — user-friendly, responsive HTML interface for managing users, announcements, job postings, applications, and a generic `/404` error page.
+- **Request Logging Middleware** — single-line terminal access logs with timestamp, HTTP method, route, status code, and response duration (`HH:MM:SS METHOD ROUTE STATUS DURATIONms`).
+- **404 Guardian & Generic 404 Redirect** — detects undefined routes and unsupported HTTP methods, records `[404]` entries with explanatory `reason` to terminal and `backend/logs/error.logs`, and redirects invalid requests (`302`) to the XSS-safe `/404` view without redirect loops.
+- **5xx Guardian Middleware** — catches server-side runtime/database errors (including `AggregateError`), logs `[5xx]` records with full stack traces to terminal and `backend/logs/error.logs`, and returns structured JSON error responses (`500` or explicit `4xx`).
+- **Domain & Validation Rules (`ddd.md`)** — comprehensive schema dictionary, field limits (e.g., `job_postings` mandatory `title` max 120 chars, mandatory `company`, optional `city` & `description`), and entity lifecycle rules.
 
 ## 🛠️ Tech Stack
 
@@ -24,7 +28,8 @@ The project grows week by week, following the course structure — starting with
 | Backend | Node.js & Express.js | Fast to build with, large ecosystem, async I/O well-suited for RESTful and MVC web services. |
 | Database | PostgreSQL 16 | Reliable relational database with robust support for foreign keys, cascade rules, checks, unique constraints, and indexes. |
 | Migration & Seeding | Custom Migration Runner & Factory-based Seeder | Sequential SQL migrations (`backend/migrations/`) with automatic tracking and idempotent seeding (`backend/seeds/`). |
-| Frontend / Views | Server-Side Rendered (SSR) HTML/CSS | Dependency-light, responsive, accessible MVC views with form validation, alerts, and badges. |
+| Middleware & Observability | Custom Express Middlewares (`logger`, `404 Guardian`, `5xx Guardian`) & File Logger | Standardized single-line request logs, generic `/404` redirect handling, and persistent `[404]` / `[5xx]` audit logs in `backend/logs/error.logs`. |
+| Frontend / Views | Server-Side Rendered (SSR) HTML/CSS | Dependency-light, responsive, accessible MVC views with form validation, alerts, XSS escaping, and badges. |
 | API Docs | OpenAPI 3.0 & Swagger UI | Auto-generated interactive API docs (`/api/swagger`) via `swagger-jsdoc` and `swagger-ui-express`. |
 | DevOps | Docker & Docker Compose | Multi-container setup (Node.js backend + PostgreSQL db) ensuring cross-platform reproducibility. |
 | Version Control | Git & GitHub | Semester-long weekly progression reflected in clean commit history. |
@@ -34,6 +39,8 @@ The project grows week by week, following the course structure — starting with
 ```text
 alumni/
 ├── backend/
+│   ├── logs/                        # Auto-created runtime error logs (gitignored)
+│   │   └── error.logs               # Persistent [404] and [5xx] error log entries
 │   ├── migrations/                  # Sequential SQL migration files
 │   │   ├── 001_create_departments.sql
 │   │   ├── 002_create_users.sql
@@ -51,14 +58,17 @@ alumni/
 │   │   │   ├── migrate.js
 │   │   │   └── swagger.js
 │   │   ├── controllers/             # MVC Web & REST API controllers
-│   │   │   ├── homeController.js
+│   │   │   ├── homeController.js    # Home, health, utility & generic /404 page handler
 │   │   │   ├── userController.js & apiUserController.js
 │   │   │   ├── announcementController.js & apiAnnouncementController.js
 │   │   │   ├── jobPostingController.js & apiJobPostingController.js
 │   │   │   ├── applicationController.js & apiApplicationController.js
 │   │   │   ├── apiDepartmentController.js
-│   │   │   ├── apiEventController.js
-│   │   │   └── apiEventRegistrationRoutes.js
+│   │   │   └── apiEventController.js
+│   │   ├── middlewares/             # Express request/error guardian middlewares
+│   │   │   ├── logger.js            # Single-line request logger (HH:MM:SS METHOD ROUTE STATUS ms)
+│   │   │   ├── notFoundGuardian.js  # 404 detection, error.logs recording & /404 redirect
+│   │   │   └── serverErrorGuardian.js # 5xx error catcher, stack trace logging & JSON response
 │   │   ├── models/                  # PostgreSQL data models with relational queries
 │   │   │   ├── index.js             # Central export and relationship metadata
 │   │   │   ├── userModel.js
@@ -69,7 +79,7 @@ alumni/
 │   │   │   ├── jobPostingModel.js
 │   │   │   └── applicationModel.js
 │   │   ├── routes/                  # Modular Web & REST API routes
-│   │   │   ├── index.js             # Main router
+│   │   │   ├── index.js             # Main router (including GET /404)
 │   │   │   ├── userRoutes.js & apiUserRoutes.js
 │   │   │   ├── announcementRoutes.js & apiAnnouncementRoutes.js
 │   │   │   ├── jobPostingRoutes.js & apiJobPostingRoutes.js
@@ -77,18 +87,22 @@ alumni/
 │   │   │   ├── apiDepartmentRoutes.js
 │   │   │   ├── apiEventRoutes.js
 │   │   │   └── apiEventRegistrationRoutes.js
+│   │   ├── utils/                   # Shared backend utilities
+│   │   │   └── errorLogger.js       # Auto-creates logs/ and writes error.logs + console.error
 │   │   ├── views/                   # Server-side HTML View templates
+│   │   │   ├── index.js             # Central view exports
 │   │   │   ├── userView.js
 │   │   │   ├── announcementView.js
 │   │   │   ├── jobPostingView.js
-│   │   │   └── applicationView.js
-│   │   └── index.js                 # Application entrypoint
+│   │   │   ├── applicationView.js
+│   │   │   └── notFoundView.js      # Generic XSS-safe 404 error HTML page
+│   │   └── index.js                 # Application entrypoint & middleware pipeline
 │   └── package.json
 ├── .env.example                     # Environment variables template
-├── .gitignore                       # Excludes .env and node_modules
+├── .gitignore                       # Excludes .env, node_modules, logs/
 ├── docker-compose.yml               # PostgreSQL db + Node app orchestration
 ├── Dockerfile                       # Backend container image
-├── ddd.md                           # Domain-driven data architecture & ER diagram
+├── ddd.md                           # Domain-driven data architecture, ER diagram & rules
 └── README.md
 ```
 
@@ -104,45 +118,51 @@ Bu proje, kodun okunabilirliğini, bakımını ve ölçeklenebilirliğini artır
                                   │
                                   ▼
                       ┌────────────────────────┐
-                      │    Express Router      │
-                      │ (backend/src/routes/)  │
-                      │  ├── index.js          │
-                      │  ├── userRoutes.js / apiUserRoutes.js
-                      │  ├── announcementRoutes.js / apiAnnouncementRoutes.js
-                      │  ├── jobPostingRoutes.js / apiJobPostingRoutes.js
-                      │  └── applicationRoutes.js / apiApplicationRoutes.js
+                      │ requestLogger (logger) │
+                      │ (HH:MM:SS METOD ...ms) │
                       └───────────┬────────────┘
                                   │
                                   ▼
                       ┌────────────────────────┐
-                      │       Controller       │
-                      │  (İş Mantığı & Akış)   │
-                      │(backend/src/controllers)│
-                      │  ├── homeController    │
-                      │  ├── userController / apiUserController
-                      │  ├── announcementController / apiAnnouncementController
-                      │  ├── jobPostingController / apiJobPostingController
-                      │  └── applicationController / apiApplicationController
-                      └───────┬────────┬───────┘
-                              │        │
-             Veri Okuma/Yazma │        │ Şablon Render & Yanıt
-                              ▼        ▼
-┌───────────────────────────────┐    ┌───────────────────────────────┐
-│             Model             │    │             View              │
-│  - PostgreSQL Models:         │    │  - HTML Views:                │
-│    * UserModel,               │    │    * userView.js              │
+                      │    Express Router      │
+                      │ (backend/src/routes/)  │
+                      │  ├── index.js (/404 ..)│
+                      │  ├── userRoutes.js / apiUserRoutes.js
+                      │  ├── announcementRoutes.js / apiAnnouncementRoutes.js
+                      │  ├── jobPostingRoutes.js / apiJobPostingRoutes.js
+                      │  └── applicationRoutes.js / apiApplicationRoutes.js
+                      └─────┬────────────┬─────┘
+                            │            │ (Eşleşmeyen Route / Metod)
+                            ▼            └──────────────────────────────┐
+                ┌────────────────────────┐                              ▼
+                │       Controller       │                 ┌────────────────────────┐
+                │  (İş Mantığı & Akış)   │                 │   404 Guardian         │
+                │(backend/src/controllers)│                │ - [404] logs/error.logs│
+                │  ├── homeController    │                 │ - Redirect -> GET /404 │
+                │  ├── userController / apiUserController  └────────────────────────┘
+                │  ├── announcementController / apiAnnouncementController
+                │  ├── jobPostingController / apiJobPostingController
+                │  └── applicationController / apiApplicationController
+                └───────┬────────┬───────┘
+                        │        │                     (Sunucu / Runtime Hatası)
+       Veri Okuma/Yazma │        │ Şablon Render       ────────────────────────► ┌──────────────────────────┐
+                        ▼        ▼                                               │   5xx Guardian           │
+┌───────────────────────────────┐    ┌───────────────────────────────┐           │ - [5xx] logs/error.logs  │
+│             Model             │    │             View              │           │   + Stack Trace          │
+│  - PostgreSQL Models:         │    │  - HTML Views:                │           │ - 500 JSON (reason)      │
+│    * UserModel,               │    │    * userView.js              │           └──────────────────────────┘
 │    * DepartmentModel,         │    │    * announcementView.js      │
 │    * JobPostingModel,         │    │    * jobPostingView.js        │
 │    * ApplicationModel,        │    │    * applicationView.js       │
-│    * EventModel,              │    │  - JSON REST API Responses    │
-│    * EventRegistrationModel   │    │  - Swagger UI (/api/swagger)  │
-│  - PostgreSQL Pool (config/db)│    │                               │
+│    * EventModel,              │    │    * notFoundView.js (/404)   │
+│    * EventRegistrationModel   │    │  - JSON REST API Responses    │
+│  - PostgreSQL Pool (config/db)│    │  - Swagger UI (/api/swagger)  │
 └───────────────────────────────┘    └───────────────────────────────┘
 ```
 
 ### 1. 🔀 Routing Katmanı (`backend/src/routes/`)
 Yönlendirme katmanı modüler bir yapıda tasarlanmıştır:
-- **[`index.js`](backend/src/routes/index.js) (Ana Yönlendirici):** Genel sayfa ve servis rotalarını (`/`, `/about`, `/api/health`, `/hello`, `/sum`) barındırır ve Web ile REST API alt router'larını sisteme bağlar (`router.use`).
+- **[`index.js`](backend/src/routes/index.js) (Ana Yönlendirici):** Genel sayfa ve servis rotalarını (`/`, `/about`, `/api/health`, `/hello`, `/sum`, `/404`) barındırır ve Web ile REST API alt router'larını sisteme bağlar (`router.use`).
 - **Web Router'ları (HTML Görünümleri):**
   - **[`userRoutes.js`](backend/src/routes/userRoutes.js) (`/users`):** Mezunlar web listesi, kayıt formu, düzenleme formu ve profil detayları.
   - **[`announcementRoutes.js`](backend/src/routes/announcementRoutes.js) (`/announcements`):** Duyurular web listesi, duyuru yayınlama, düzenleme ve detay sayfaları.
@@ -158,6 +178,7 @@ Yönlendirme katmanı modüler bir yapıda tasarlanmıştır:
 
 ### 2. 🎮 Controller Katmanı (`backend/src/controllers/`)
 Uygulamanın iş mantığının (business logic), gelen istek parametrelerinin (`req.params`, `req.body`, `req.query`) doğrulanmasının ve HTTP durum kodlarının (200, 201, 302, 400, 404, 409, 500) yönetildiği katmandır.
+- **Genel & Utility Controller ([`homeController.js`](backend/src/controllers/homeController.js)):** Ana sayfa, hakkında, sağlık kontrolü (`/api/health`) ve generic 404 hata sayfasını (`getNotFoundPage` — `GET /404` isteğini `path`, `method` ve `reason` query parametreleriyle HTTP `404` olarak render eder) yönetir.
 - **Web Controller Katmanı ([`userController.js`](backend/src/controllers/userController.js), [`announcementController.js`](backend/src/controllers/announcementController.js), [`jobPostingController.js`](backend/src/controllers/jobPostingController.js), [`applicationController.js`](backend/src/controllers/applicationController.js)):**
   - Model ve View arasında köprü görevi görerek web üzerindeki tüm CRUD akışını yönetir.
   - `GET /`: Verileri modelden çekip ilgili View şablonuyla tarayıcıya sunar.
@@ -191,10 +212,34 @@ Kullanıcıya veya istemciye sunulan çıktının oluşturulduğu bağımsız su
 - **[`announcementView.js`](backend/src/views/announcementView.js):** Duyurular paneli, detay, düzenleme ve 404 sayfaları.
 - **[`jobPostingView.js`](backend/src/views/jobPostingView.js):** İş ilanları listesi, yeni ilan formu, zengin ilan detay kartı (başvuran adaylar listesiyle) ve düzenleme formu.
 - **[`applicationView.js`](backend/src/views/applicationView.js):** İş başvuruları takip paneli, dinamik ilan/aday seçimli başvuru yapma formu, başvuru detay kartı ve durum güncelleme formu.
+- **[`notFoundView.js`](backend/src/views/notFoundView.js):** Geçersiz rotalardan yönlendirilen istekler için `escapeHtml` XSS korumalı generic `404 Not Found` HTML hata sayfası (`renderNotFoundPage`).
+
+### 5. 🛡️ Middleware, Hata Yönetimi ve Loglama Katmanı (`backend/src/middlewares/` & `backend/src/utils/`)
+Uygulama yaşam döngüsündeki tüm istekleri izlemek, yakalanmayan rotaları güvenli biçimde yönetmek ve hataları kalıcı olarak kaydetmek için [`backend/src/index.js`](backend/src/index.js) içinde sıralı middleware zinciri tanımlanmıştır:
+
+- **Request Logger ([`logger.js`](backend/src/middlewares/logger.js)):**
+  - Her HTTP isteği tamamlandığında terminale tek satırlık özet log basar (`HH:MM:SS METOD ROUTE DURUM_KODU SÜRE`).
+  - Örnek çıktı: `10:20:30 POST /api/users 201 18ms`
+- **404 Guardian ([`notFoundGuardian.js`](backend/src/middlewares/notFoundGuardian.js)):**
+  - Tanımlı olmayan bir route veya mevcut bir route'a desteklenmeyen HTTP metoduyla istek geldiğinde (`collectSupportedMethods` ile desteklenen metodları tespit ederek) açıklayıcı `reason` mesajı üretir.
+  - Yönlendirme yapmadan önce hatayı `[404]` türüyle terminale ve `backend/logs/error.logs` dosyasına kaydeder.
+  - Geçersiz istekleri `302 Found` ile `/404?path=...&method=...&reason=...` adresine yönlendirir (`GET /404` HTML sayfasını HTTP `404` durum koduyla döner; `/404` adresine farklı bir HTTP metoduyla gelinirse yönlendirme döngüsünü önlemek için doğrudan `404` HTML yanıtı üretir).
+- **5xx Guardian ([`serverErrorGuardian.js`](backend/src/middlewares/serverErrorGuardian.js)):**
+  - Express hata yakalama zincirinde (`(err, req, res, next)`) oluşan sunucu taraflı hataları yakalar (`AggregateError`, `err.reason`, `err.code` dahil neden çıkarımı yapar).
+  - Hatayı `[5xx]` (veya açık `4xx`) türü, durum kodu, nedeni ve `5xx` hataları için tam `Stack Trace` bilgisiyle terminale ve `backend/logs/error.logs` dosyasına kaydeder; istemciye `500` durum koduyla JSON hata yanıtı (`error`, `statusCode`, `reason`, `method`, `path`, `timestamp`) döner.
+- **Merkezi Hata Loglayıcı ([`errorLogger.js`](backend/src/utils/errorLogger.js)):**
+  - `backend/logs/` klasörü yoksa otomatik oluşturur (`fs.mkdirSync(..., { recursive: true })`) ve tüm middleware hatalarını `backend/logs/error.logs` dosyasına ekler.
+  - Örnek `error.logs` formatı (`[404]` ve `[5xx]` ayrımı açıkça görülür):
+    ```text
+    [2026-11-11 10:55:28] [404] GET /olmayan-sayfa | Status: 404 | Reason: Tanımlı olmayan route: 'GET /olmayan-sayfa' ile eşleşen bir endpoint sistemde bulunamadı.
+    [2026-11-11 10:55:28] [5xx] GET /api/users | Status: 500 | Reason: [ECONNREFUSED] connect ECONNREFUSED ...
+    Stack Trace:
+    Error: ...
+    ```
 
 ---
 
-## 🗄️ Database, Migrations & Seeds
+## 🗄️ Database, Migrations, Seeds & Domain Rules
 
 Veritabanı tasarımı [ddd.md](ddd.md) dosyasındaki şemaya dayanmaktadır.
 
@@ -218,6 +263,12 @@ Uygulama açılışında ([`backend/src/config/migrate.js`](backend/src/config/m
   # Yalnızca iş ilanlarını tohumlama
   docker compose exec app node seeds/index.js job_postings
   ```
+
+### 3. Alan ve Doğrulama Kuralları (`ddd.md`)
+Tüm varlıklar için veri bütünlüğü ve iş kuralları [`ddd.md`](ddd.md) (Bölüm 6) içerisinde tanımlanmıştır:
+- **Ortak Kurallar:** Metinlerde `trim` temizliği, URL alanlarında yalnızca `http://` veya `https://` şeması, e-posta alanlarında küçük harf normalizasyonu, UTC zaman damgaları ve geçerli foreign key bütünlüğü.
+- **`job_postings` Kuralları:** `title` zorunlu (boşluk temizlendikten sonra **3–120 karakter**), `company` zorunlu (2–150 karakter), `city` ve `description` opsiyonel, `employment_type` kısıtlı değer kümesi (`full-time`, `part-time`, `internship`, `contract`, `remote`), `deadline` için geçmiş tarih yasağı ve süresi dolmuş/pasif ilanlara başvuru engeli.
+- **`applications` & Diğer Modüller:** Tekil başvuru kuralı (`UNIQUE(job_posting_id, user_id)`), kendi ilanına başvuru engeli, başvuru durum geçiş kuralları (`pending` -> `reviewed` / `interview` / `accepted` / `rejected`), `users`, `departments`, `announcements`, `events` ve kapasite kontrollü `event_registrations` kuralları.
 
 ---
 
@@ -260,6 +311,7 @@ Konteynerler ayağa kalktıktan sonra tarayıcınızdan aşağıdaki adreslere e
 | **Duyurular** | [http://localhost:3000/announcements](http://localhost:3000/announcements) | Kampüs duyuruları paneli |
 | **İş İlanları** | [http://localhost:3000/job-postings](http://localhost:3000/job-postings) | Kariyer fırsatları ve ilan yayınlama |
 | **İş Başvuruları** | [http://localhost:3000/applications](http://localhost:3000/applications) | İlan başvuruları ve durum takibi |
+| **Generic 404 Sayfası** | [http://localhost:3000/404](http://localhost:3000/404) | Geçersiz rotaların yönlendirildiği 404 hata sayfası |
 | **Hakkında** | [http://localhost:3000/about](http://localhost:3000/about) | Proje ve ekip bilgisi |
 
 ---
