@@ -1,73 +1,40 @@
 const { pool } = require('../config/db');
+const { homeView, notFoundView } = require('../views');
 
-const getHome = (req, res) => {
-  const html = `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Alumni</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 0 20px;
-      line-height: 1.6;
-      color: #333;
-    }
-    h1 {
-      color: #2c3e50;
-      border-bottom: 2px solid #eaecef;
-      padding-bottom: 10px;
-    }
-    p {
-      color: #555;
-    }
-    ul {
-      padding-left: 20px;
-    }
-    li {
-      margin-bottom: 8px;
-    }
-    code {
-      background-color: #f6f8fa;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 0.9em;
-      color: #0366d6;
-    }
-  </style>
-</head>
-<body>
-  <h1>Alumni</h1>
-  <p>Alumni Tracking System projesine hoş geldiniz. Mezunlar ile üniversite arasındaki iletişimi kolaylaştırmak ve etkinlik takibini sağlamak için geliştirilen backend servisidir.</p>
-  <h3>Mevcut Endpoint'ler:</h3>
-  <ul>
-    <li><code>GET /</code> - Ana karşılama sayfası</li>
-    <li><a href="/about"><code>GET /about</code></a> - Proje hakkında detaylı bilgi sayfası</li>
-    <li><a href="/api/swagger" target="_blank"><code>GET /api/swagger</code></a> - İnteraktif Swagger (OpenAPI) API Dokümantasyonu</li>
-    <li><a href="/api/health"><code>GET /api/health</code></a> - Uygulama ve veritabanı sağlık kontrolü (JSON)</li>
-    <li><a href="/users"><code>GET /users</code></a> - Mezunlar listesi web sayfası (UserController - HTML)</li>
-    <li><a href="/api/users"><code>GET /api/users</code></a> - Kullanıcı listesi REST API (ApiUserController - JSON)</li>
-    <li><a href="/announcements"><code>GET /announcements</code></a> - Duyurular listesi web sayfası (AnnouncementController - HTML)</li>
-    <li><a href="/api/announcements"><code>GET /api/announcements</code></a> - Duyurular REST API (ApiAnnouncementController - JSON)</li>
-    <li><a href="/job-postings"><code>GET /job-postings</code></a> - İş ilanları web sayfası (JobPostingController - HTML)</li>
-    <li><a href="/api/job-postings"><code>GET /api/job-postings</code></a> - İş ilanları REST API (ApiJobPostingController - JSON)</li>
-    <li><a href="/applications"><code>GET /applications</code></a> - İş başvuruları web sayfası (ApplicationController - HTML)</li>
-    <li><a href="/api/applications"><code>GET /api/applications</code></a> - İş başvuruları REST API (ApiApplicationController - JSON)</li>
-    <li><code>POST /api/users</code> - Yeni kullanıcı ekleme (In-Memory JSON)</li>
-    <li><code>PUT /api/users/:id</code> - Kullanıcıyı tamamen güncelleme (Tüm alanlar zorunlu)</li>
-    <li><code>PATCH /api/users/:id</code> - Kullanıcıyı kısmi güncelleme (Sadece gönderilen alanlar)</li>
-    <li><code>DELETE /api/users/:id</code> - Kullanıcı silme (In-Memory JSON)</li>
-    <li><code>GET /hello</code> - "Hello World!" mesajı döner</li>
-    <li><code>GET /hello/:name</code> - Belirtilen isme özel karşılama mesajı döner (Örnek: <code>/hello/Emel</code>)</li>
-    <li><code>GET /sum/:number1/:number2</code> - İki sayının toplamını hesaplar (Örnek: <code>/sum/5/3</code>)</li>
-  </ul>
-</body>
-</html>`;
+const getHome = async (req, res) => {
+  let stats = {
+    usersCount: 450000,
+    jobPostingsCount: 120,
+    announcementsCount: 48,
+    departmentsCount: 17,
+    dbConnected: false,
+  };
 
-  res.status(200).send(html);
+  try {
+    const client = await pool.connect();
+    try {
+      const [uRes, jRes, aRes, dRes] = await Promise.all([
+        client.query('SELECT COUNT(*) FROM users;'),
+        client.query('SELECT COUNT(*) FROM job_postings WHERE is_active = TRUE;'),
+        client.query('SELECT COUNT(*) FROM announcements;'),
+        client.query('SELECT COUNT(*) FROM departments;'),
+      ]);
+      stats = {
+        usersCount: parseInt(uRes.rows[0].count, 10),
+        jobPostingsCount: parseInt(jRes.rows[0].count, 10),
+        announcementsCount: parseInt(aRes.rows[0].count, 10),
+        departmentsCount: parseInt(dRes.rows[0].count, 10),
+        dbConnected: true,
+      };
+    } finally {
+      client.release();
+    }
+  } catch (_) {
+    // Veritabanı kapalıysa veya sorgu yapılamazsa kurumsal varsayılan istatistikler kullanılır
+  }
+
+  const html = homeView.renderHomePage(stats);
+  return res.status(200).send(html);
 };
 
 const getAbout = (req, res) => {
@@ -232,8 +199,6 @@ const getHealth = async (req, res) => {
     database: dbStatus,
   });
 };
-
-const { notFoundView } = require('../views');
 
 /**
  * Generic 404 hata sayfasını render eder.

@@ -17,13 +17,13 @@ const applicationRoutes = require('./applicationRoutes');
  * @swagger
  * /:
  *   get:
- *     summary: Ana Karşılama Sayfası
- *     description: Alumni Tracking System HTML ana sayfasını döner.
+ *     summary: "İstanbul Üniversitesi Mezun Bilgi Sistemi Ana Sayfası"
+ *     description: "T.C. İstanbul Üniversitesi kurumsal kimliğine uygun olarak tasarlanan İÜ Mezun Bilgi Sistemi HTML ana sayfasını döner."
  *     tags:
  *       - General
  *     responses:
  *       200:
- *         description: Başarılı HTML sayfası
+ *         description: "Başarılı HTML ana sayfası"
  *         content:
  *           text/html:
  *             schema:
