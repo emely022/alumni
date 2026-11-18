@@ -1,133 +1,10 @@
 /**
- * NotFound View (Görünüm Katmanı)
+ * NotFound View (Görünüm Katmanı) - İstanbul Üniversitesi Mezun Bilgi Sistemi
  *
- * MVC mimarisinin View katmanıdır.
- * Geçersiz veya bulunamayan route'lara yönlendirilen kullanıcılar için
- * generic 404 HTML hata sayfasını oluşturmaktan sorumludur.
+ * design.md tasarım sistemine uygun generic 404 HTML hata sayfası.
  */
 
-const baseStyles = `
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    max-width: 900px;
-    margin: 40px auto;
-    padding: 0 20px;
-    line-height: 1.6;
-    color: #333;
-    background-color: #fcfcfc;
-  }
-  h1, h2 {
-    color: #2c3e50;
-  }
-  h1 {
-    border-bottom: 2px solid #eaecef;
-    padding-bottom: 10px;
-    margin-top: 10px;
-  }
-  .nav {
-    margin-bottom: 25px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #eaecef;
-  }
-  .nav a {
-    color: #0366d6;
-    text-decoration: none;
-    margin-right: 18px;
-    font-weight: 500;
-  }
-  .nav a:hover {
-    text-decoration: underline;
-  }
-  .card {
-    background: white;
-    padding: 28px;
-    border-radius: 8px;
-    border: 1px solid #e1e4e8;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  }
-  .status-badge {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 999px;
-    font-size: 0.85em;
-    font-weight: 700;
-    background-color: #ffeef0;
-    color: #86181d;
-    border: 1px solid #fdaeb7;
-    margin-bottom: 10px;
-  }
-  .alert-error {
-    background-color: #ffeef0;
-    border: 1px solid #fdaeb7;
-    color: #86181d;
-    padding: 14px 18px;
-    border-radius: 6px;
-    margin: 18px 0;
-    font-size: 0.95em;
-  }
-  .meta {
-    background-color: #f6f8fa;
-    border: 1px solid #e1e4e8;
-    border-radius: 6px;
-    padding: 12px 16px;
-    margin: 16px 0;
-    font-size: 0.92em;
-    color: #24292e;
-    word-break: break-word;
-  }
-  .meta code {
-    background-color: #eaecef;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 0.92em;
-  }
-  .actions {
-    margin-top: 22px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  .btn {
-    display: inline-block;
-    padding: 10px 16px;
-    border-radius: 6px;
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 0.95em;
-  }
-  .btn-primary {
-    background-color: #0366d6;
-    color: #ffffff;
-  }
-  .btn-primary:hover {
-    background-color: #0256b9;
-  }
-  .btn-secondary {
-    background-color: #f6f8fa;
-    color: #24292e;
-    border: 1px solid #d1d5da;
-  }
-  .btn-secondary:hover {
-    background-color: #eaecef;
-  }
-`;
-
-/**
- * Kullanıcıdan veya URL query parametrelerinden gelen metni HTML için güvenli hale getirir.
- *
- * @param {unknown} value
- * @returns {string}
- */
-const escapeHtml = (value) => {
-  const str = String(value ?? '');
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-};
+const { renderLayout, escapeHtml } = require('./layout');
 
 /**
  * Generic 404 hata sayfası HTML şablonunu üretir.
@@ -148,46 +25,41 @@ const renderNotFoundPage = ({ path, method, reason } = {}) => {
   const safePath = escapeHtml(normalizedPath);
   const safeReason = escapeHtml(normalizedReason);
 
-  return `
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>404 - Sayfa Bulunamadı | Mezun Bilgi Sistemi</title>
-  <style>${baseStyles}</style>
-</head>
-<body>
-  <nav class="nav">
-    <a href="/">Ana Sayfa</a>
-    <a href="/users">Mezunlar</a>
-    <a href="/announcements">Duyurular</a>
-    <a href="/job-postings">İş İlanları</a>
-    <a href="/applications">Başvurular</a>
-  </nav>
+  const content = `
+    <div class="card" style="max-width: 760px; margin: 30px auto; padding: 40px; text-align: center;">
+      <div style="font-size: 56px; margin-bottom: 12px;">🏛️ 404</div>
+      <span class="badge badge-danger" style="font-size: 14px; padding: 6px 16px; margin-bottom: 16px;">SAYFA BULUNAMADI</span>
+      <h2 style="font-size: 26px; font-weight: 700; color: #111827; margin: 12px 0;">İstediğiniz Sayfa Sistemde Mevcut Değil</h2>
+      <p style="color: #4B5563; font-size: 15px; max-width: 580px; margin: 0 auto 24px auto;">
+        Ulaşmaya çalıştığınız sayfa veya API endpoint'i yayından kaldırılmış, taşınmış ya da bağlantı adresi hatalı girilmiş olabilir.
+      </p>
 
-  <div class="card">
-    <span class="status-badge">404 Not Found</span>
-    <h1>Sayfa Bulunamadı</h1>
-    <p>Ulaşmaya çalıştığınız sayfa veya API endpoint'i mevcut değil ya da taşınmış olabilir.</p>
+      <div style="background-color: #F9FAFB; border: 1.5px solid #E5E7EB; border-radius: 12px; padding: 14px 18px; text-align: left; margin-bottom: 20px;">
+        <div style="font-size: 13px; color: #6B7280; margin-bottom: 4px;">İstenen Rota & Metod:</div>
+        <code style="font-size: 14px; font-weight: 700; color: #111827; font-family: monospace;">${safeMethod} ${safePath}</code>
+      </div>
 
-    <div class="meta">
-      <strong>İstenen Adres:</strong> <code>${safeMethod} ${safePath}</code>
+      <div class="alert alert-error" style="text-align: left; margin-bottom: 28px;">
+        <span>⚠️</span>
+        <div><strong>Hata Nedeni:</strong> ${safeReason}</div>
+      </div>
+
+      <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+        <a class="btn btn-primary" href="/">← Ana Sayfaya Dön</a>
+        <a class="btn btn-secondary" href="/users">Mezunlar Dizini</a>
+        <a class="btn btn-secondary" href="/job-postings">Kariyer İlanları</a>
+        <a class="btn btn-secondary" href="/api/swagger" target="_blank">Swagger API</a>
+      </div>
     </div>
-
-    <div class="alert-error">
-      <strong>Neden:</strong> ${safeReason}
-    </div>
-
-    <div class="actions">
-      <a class="btn btn-primary" href="/">Ana Sayfaya Dön</a>
-      <a class="btn btn-secondary" href="/job-postings">İş İlanlarını Görüntüle</a>
-      <a class="btn btn-secondary" href="/api/swagger">API Dokümantasyonu</a>
-    </div>
-  </div>
-</body>
-</html>
   `;
+
+  return renderLayout({
+    title: '404 - Sayfa Bulunamadı | İstanbul Üniversitesi Mezun Bilgi Sistemi',
+    activeNav: '',
+    content,
+    pageTitle: '',
+    breadcrumbsHtml: '<a href="/">Ana Sayfa</a> <span class="separator">/</span> <span class="current">404 Hatası</span>',
+  });
 };
 
 module.exports = {

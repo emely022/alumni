@@ -1,255 +1,13 @@
 /**
- * JobPosting View (Görünüm Katmanı)
+ * JobPosting View (Görünüm Katmanı) - İstanbul Üniversitesi Mezun Bilgi Sistemi
  * 
- * MVC mimarisinin View katmanıdır.
- * İş ilanları listesi, yeni ilan oluşturma formu, ilan düzenleme formu
- * ve ilan detay sayfası için gerekli HTML şablonlarını oluşturmaktan sorumludur.
+ * design.md tasarım sistemine uygun:
+ * - Koyu yeşil zemin: #214539
+ * - Header, Menü, Logo, Footer
+ * - Beyaz kartlar, sarı butonlar ve Arial tipografi
  */
 
-const baseStyles = `
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    max-width: 950px;
-    margin: 40px auto;
-    padding: 0 20px;
-    line-height: 1.6;
-    color: #333;
-    background-color: #fcfcfc;
-  }
-  h1, h2, h3 {
-    color: #2c3e50;
-  }
-  h1 {
-    border-bottom: 2px solid #eaecef;
-    padding-bottom: 10px;
-    margin-top: 10px;
-  }
-  .nav {
-    margin-bottom: 25px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #eaecef;
-  }
-  .nav a {
-    color: #0366d6;
-    text-decoration: none;
-    margin-right: 18px;
-    font-weight: 500;
-  }
-  .nav a:hover {
-    text-decoration: underline;
-  }
-  .alert {
-    padding: 12px 18px;
-    border-radius: 6px;
-    margin-bottom: 20px;
-    font-size: 0.95em;
-  }
-  .alert-success {
-    background-color: #e6ffed;
-    border: 1px solid #acf2bd;
-    color: #155724;
-  }
-  .alert-error {
-    background-color: #ffeef0;
-    border: 1px solid #fdaeb7;
-    color: #86181d;
-  }
-  .card {
-    background: white;
-    padding: 20px 24px;
-    border-radius: 8px;
-    border: 1px solid #e1e4e8;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    margin-bottom: 30px;
-  }
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-  @media (max-width: 700px) {
-    .form-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-  .form-group {
-    display: flex;
-    flex-direction: column;
-  }
-  .form-group.full-width {
-    grid-column: 1 / -1;
-  }
-  .form-group label {
-    font-weight: 600;
-    margin-bottom: 6px;
-    font-size: 0.9em;
-    color: #444;
-  }
-  .form-group input, .form-group select, .form-group textarea {
-    padding: 9px 12px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 0.95em;
-    outline: none;
-    font-family: inherit;
-    transition: border-color 0.2s;
-  }
-  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-    border-color: #0366d6;
-    box-shadow: 0 0 0 3px rgba(3, 102, 214, 0.15);
-  }
-  .btn-submit {
-    grid-column: 1 / -1;
-    background-color: #2ea44f;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 1em;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    margin-top: 8px;
-  }
-  .btn-submit:hover {
-    background-color: #2c974b;
-  }
-  .btn-secondary {
-    padding: 8px 16px;
-    background: #e1e4e8;
-    color: #24292e;
-    border-radius: 6px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.95em;
-    display: inline-block;
-    text-align: center;
-    transition: background-color 0.2s;
-  }
-  .btn-secondary:hover {
-    background: #d1d5da;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-    background: white;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid #e1e4e8;
-  }
-  th {
-    background-color: #f6f8fa;
-    color: #24292e;
-    text-align: left;
-    padding: 12px 14px;
-    border-bottom: 2px solid #eaecef;
-    font-weight: 600;
-    font-size: 0.9em;
-  }
-  td {
-    padding: 12px 14px;
-    border-bottom: 1px solid #eaecef;
-    font-size: 0.95em;
-    vertical-align: middle;
-  }
-  tr:last-child td {
-    border-bottom: none;
-  }
-  tr:hover {
-    background-color: #fcfcfc;
-  }
-  .badge {
-    display: inline-block;
-    padding: 3px 8px;
-    border-radius: 12px;
-    font-size: 0.8em;
-    font-weight: 600;
-  }
-  .badge-active {
-    background: #e6ffed;
-    color: #155724;
-    border: 1px solid #acf2bd;
-  }
-  .badge-inactive {
-    background: #ffeef0;
-    color: #86181d;
-    border: 1px solid #fdaeb7;
-  }
-  .badge-type {
-    background: #e1f5fe;
-    color: #0288d1;
-    border: 1px solid #b3e5fc;
-  }
-  .btn-detail {
-    padding: 5px 9px;
-    background: #0366d6;
-    color: white;
-    border-radius: 4px;
-    text-decoration: none;
-    font-size: 0.85em;
-    font-weight: 500;
-    display: inline-block;
-  }
-  .btn-detail:hover {
-    background: #0255b5;
-  }
-  .btn-edit {
-    padding: 5px 9px;
-    background: #f1a30b;
-    color: white;
-    border-radius: 4px;
-    text-decoration: none;
-    font-size: 0.85em;
-    font-weight: 500;
-    display: inline-block;
-    margin-left: 4px;
-  }
-  .btn-edit:hover {
-    background: #d98e04;
-  }
-  .btn-delete {
-    padding: 5px 9px;
-    background: #d73a49;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 0.85em;
-    font-weight: 500;
-    cursor: pointer;
-    display: inline-block;
-    margin-left: 4px;
-    transition: background 0.2s;
-  }
-  .btn-delete:hover {
-    background: #cb2431;
-  }
-  .detail-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 20px;
-  }
-  .detail-item {
-    background: #f8fafc;
-    padding: 12px 16px;
-    border-radius: 6px;
-    border: 1px solid #e2e8f0;
-  }
-  .detail-label {
-    font-size: 0.8em;
-    color: #64748b;
-    font-weight: 600;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-  }
-  .detail-value {
-    font-size: 1.05em;
-    color: #0f172a;
-    font-weight: 500;
-  }
-`;
+const { renderLayout, escapeHtml } = require('./layout');
 
 /**
  * İş İlanları Listesi ve Yeni İlan Ekleme Formu Sayfası (GET /job-postings)
@@ -264,44 +22,46 @@ const renderJobPostingsPage = (jobPostings = [], options = {}, extraData = { use
 
   let alertBox = '';
   if (options.success) {
-    alertBox = `<div class="alert alert-success">✅ ${options.success}</div>`;
+    alertBox = `<div class="alert alert-success"><span>✅</span><div>${escapeHtml(options.success)}</div></div>`;
   } else if (options.error) {
-    alertBox = `<div class="alert alert-error">❌ ${options.error}</div>`;
+    alertBox = `<div class="alert alert-error"><span>❌</span><div>${escapeHtml(options.error)}</div></div>`;
   }
 
   const userOptions = users
-    .map((u) => `<option value="${u.id}">${u.name} (${u.email})</option>`)
+    .map((u) => `<option value="${escapeHtml(u.id)}">${escapeHtml(u.name)} (${escapeHtml(u.email)})</option>`)
     .join('');
 
   const deptOptions = departments
-    .map((d) => `<option value="${d.id}">${d.name} (${d.code})</option>`)
+    .map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)} (${escapeHtml(d.code)})</option>`)
     .join('');
 
   const jobRows = jobPostings.length === 0
-    ? `<tr><td colspan="7" style="text-align: center; color: #777; padding: 25px;">Henüz yayınlanmış iş ilanı bulunmuyor.</td></tr>`
+    ? `<tr><td colspan="7" class="empty-state"><div class="empty-state-icon">💼</div><h3>Henüz yayınlanmış iş ilanı bulunmuyor</h3><p>Aşağıdaki formu kullanarak ilk kariyer veya staj fırsatını yayınlayabilirsiniz.</p></td></tr>`
     : jobPostings
         .map(
           (j) => `
       <tr>
-        <td><strong>#${j.id}</strong></td>
+        <td><strong>#${escapeHtml(j.id)}</strong></td>
         <td>
-          <a href="/job-postings/${j.id}" style="color: #0366d6; text-decoration: none; font-weight: 600;">${j.title}</a>
-          <div style="font-size: 0.85em; color: #555;">🏢 ${j.company}</div>
+          <a href="/job-postings/${escapeHtml(j.id)}" style="font-weight: 700; color: #111827; text-decoration: none;">
+            ${escapeHtml(j.title)}
+          </a>
+          <div style="font-size: 13px; color: #4B5563; margin-top: 2px;">🏢 ${escapeHtml(j.company)}</div>
         </td>
         <td>
-          <div>${j.location || 'Belirtilmedi'}</div>
-          <span class="badge badge-type">${j.employmentType || 'full-time'}</span>
+          <div>${escapeHtml(j.location || 'Belirtilmedi')}</div>
+          <span class="badge badge-info" style="margin-top: 4px;">${escapeHtml(j.employmentType || 'full-time')}</span>
         </td>
-        <td>${j.deadline ? j.deadline : 'Süresiz'}</td>
+        <td>${j.deadline ? `<strong>${escapeHtml(j.deadline)}</strong>` : '<span style="color:#6B7280;">Süresiz</span>'}</td>
         <td>
-          ${j.isActive ? '<span class="badge badge-active">Aktif</span>' : '<span class="badge badge-inactive">Pasif</span>'}
+          ${j.isActive ? '<span class="badge badge-success">Aktif</span>' : '<span class="badge badge-danger">Pasif</span>'}
         </td>
-        <td>${j.createdAt ? j.createdAt.substring(0, 10) : '-'}</td>
-        <td style="white-space: nowrap;">
-          <a href="/job-postings/${j.id}" class="btn-detail" title="İlanı Görüntüle">Gör</a>
-          <a href="/job-postings/${j.id}/edit" class="btn-edit" title="İlanı Düzenle">Düzenle</a>
-          <form method="POST" action="/job-postings/${j.id}/delete" style="display: inline;" onsubmit="return confirm('${j.title} (@${j.company}) ilanını silmek istediğinize emin misiniz?');">
-            <button type="submit" class="btn-delete" title="İlanı Sil">Sil</button>
+        <td style="font-size: 13px; color: #6B7280;">${j.createdAt ? escapeHtml(j.createdAt.substring(0, 10)) : '-'}</td>
+        <td style="white-space: nowrap; text-align: right;">
+          <a href="/job-postings/${escapeHtml(j.id)}" class="btn btn-secondary btn-sm" title="İlanı Görüntüle">Görüntüle</a>
+          <a href="/job-postings/${escapeHtml(j.id)}/edit" class="btn btn-outline btn-sm" style="color: #111827; border-color: #D1D5DB; margin-left: 4px;" title="İlanı Düzenle">Düzenle</a>
+          <form method="POST" action="/job-postings/${escapeHtml(j.id)}/delete" style="display: inline; margin: 0;" onsubmit="return confirm('${escapeHtml(j.title)} (@${escapeHtml(j.company)}) ilanını silmek istediğinize emin misiniz?');">
+            <button type="submit" class="btn btn-danger btn-sm" style="margin-left: 4px;" title="İlanı Sil">Sil</button>
           </form>
         </td>
       </tr>
@@ -309,120 +69,129 @@ const renderJobPostingsPage = (jobPostings = [], options = {}, extraData = { use
         )
         .join('');
 
-  return `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kariyer ve İş İlanları - Alumni Tracking System</title>
-  <style>${baseStyles}</style>
-</head>
-<body>
-  <div class="nav">
-    <a href="/">← Ana Sayfa</a>
-    <a href="/users">Mezunlar (Web)</a>
-    <a href="/announcements">Duyurular (Web)</a>
-    <a href="/job-postings"><strong>İş İlanları (Web)</strong></a>
-    <a href="/applications">Başvurular (Web)</a>
-    <a href="/api/job-postings" target="_blank">JSON API (/api/job-postings)</a>
-    <a href="/api/swagger" target="_blank">Swagger Dokümantasyonu</a>
-  </div>
+  const content = `
+    ${alertBox}
 
-  <h1>💼 Kariyer ve İş İlanları (Job Postings)</h1>
-  <p>Alumni Tracking System kariyer ve iş fırsatları yönetim arayüzü. Mezunlar ve partner kuruluşlar için yeni staj ve iş ilanları yayınlayabilir, başvuruları inceleyebilirsiniz.</p>
-
-  ${alertBox}
-
-  <!-- Yeni İş İlanı Ekleme Formu (POST /job-postings) -->
-  <div class="card">
-    <h3 style="margin-top: 0; margin-bottom: 15px;">➕ Yeni İş İlanı Yayınla</h3>
-    <form method="POST" action="/job-postings">
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="title">İlan Başlığı *</label>
-          <input type="text" id="title" name="title" required placeholder="Örn: Kıdemli Full Stack Geliştirici">
+    <!-- Güncel İş İlanları Tablosu -->
+    <div class="card">
+      <div class="card-title">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span>💼 Güncel Kariyer ve Staj İlanları</span>
+          <span class="badge badge-dark">Toplam: ${jobPostings.length}</span>
         </div>
-        <div class="form-group">
-          <label for="company">Şirket / Kurum Adı *</label>
-          <input type="text" id="company" name="company" required placeholder="Örn: Trendyol Tech">
-        </div>
-        <div class="form-group">
-          <label for="location">Konum / Şehir</label>
-          <input type="text" id="location" name="location" placeholder="Örn: İstanbul / Hibrit veya Uzaktan">
-        </div>
-        <div class="form-group">
-          <label for="employmentType">Çalışma Türü *</label>
-          <select id="employmentType" name="employmentType" required>
-            <option value="full-time">Tam Zamanlı (full-time)</option>
-            <option value="part-time">Yarı Zamanlı (part-time)</option>
-            <option value="internship">Staj (internship)</option>
-            <option value="contract">Sözleşmeli (contract)</option>
-            <option value="remote">Uzaktan (remote)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="salaryRange">Maaş Aralığı</label>
-          <input type="text" id="salaryRange" name="salaryRange" placeholder="Örn: 80.000 - 120.000 TL">
-        </div>
-        <div class="form-group">
-          <label for="deadline">Son Başvuru Tarihi</label>
-          <input type="date" id="deadline" name="deadline">
-        </div>
-        <div class="form-group">
-          <label for="contactEmail">İletişim / Başvuru E-Postası</label>
-          <input type="email" id="contactEmail" name="contactEmail" placeholder="Örn: kariyer@sirket.com">
-        </div>
-        <div class="form-group">
-          <label for="applicationUrl">Online Başvuru Bağlantısı (URL)</label>
-          <input type="url" id="applicationUrl" name="applicationUrl" placeholder="Örn: https://sirket.com/kariyer">
-        </div>
-        <div class="form-group">
-          <label for="postedBy">İlanı Yayınlayan Mezun (posted_by)</label>
-          <select id="postedBy" name="postedBy">
-            <option value="">-- Mezun Seçiniz (Opsiyonel) --</option>
-            ${userOptions}
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="departmentId">Hedef Bölüm (department_id)</label>
-          <select id="departmentId" name="departmentId">
-            <option value="">-- Tüm Bölümler / Genel --</option>
-            ${deptOptions}
-          </select>
-        </div>
-        <div class="form-group full-width">
-          <label for="description">İş Tanımı ve Detaylar *</label>
-          <textarea id="description" name="description" rows="3" required placeholder="Pozisyon sorumlulukları, proje hedefleri ve ekip yapısı..."></textarea>
-        </div>
-        <div class="form-group full-width">
-          <label for="requirements">Aday Kriterleri ve Gereksinimler</label>
-          <textarea id="requirements" name="requirements" rows="2" placeholder="Teknolojiler, deneyim süresi, yetkinlikler..."></textarea>
-        </div>
-        <button type="submit" class="btn-submit">🚀 İlanı Yayınla</button>
+        <a href="#new-job-form" class="btn btn-primary btn-sm">+ Yeni İlan Yayınla</a>
       </div>
-    </form>
-  </div>
 
-  <!-- İş İlanları Tablosu -->
-  <h2>📋 Güncel İş İlanları Listesi (${jobPostings.length})</h2>
-  <table>
-    <thead>
-      <tr>
-        <th style="width: 50px;">ID</th>
-        <th>Pozisyon / Şirket</th>
-        <th>Konum & Tür</th>
-        <th>Son Başvuru</th>
-        <th>Durum</th>
-        <th>Yayın Tarihi</th>
-        <th style="width: 140px;">İşlemler</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${jobRows}
-    </tbody>
-  </table>
-</body>
-</html>`;
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 50px;">ID</th>
+              <th>Pozisyon & Şirket</th>
+              <th>Konum & Çalışma Türü</th>
+              <th>Son Başvuru</th>
+              <th>Durum</th>
+              <th>Yayın Tarihi</th>
+              <th style="width: 200px; text-align: right;">İşlemler</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${jobRows}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Yeni İş İlanı Ekleme Formu (POST /job-postings) -->
+    <div class="card" id="new-job-form">
+      <div class="card-title">
+        <span>➕ Mezunlar İçin Yeni İş/Staj İlanı Yayınla</span>
+        <span class="badge badge-warning">Kariyer Formu</span>
+      </div>
+      <p style="color: #4B5563; font-size: 14px; margin-bottom: 20px;">
+        İstanbul Üniversitesi mezunları ve öğrencileri için tam zamanlı, yarı zamanlı veya staj fırsatlarını duyurun.
+      </p>
+
+      <form method="POST" action="/job-postings">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="title">İlan / Pozisyon Başlığı *</label>
+            <input type="text" id="title" name="title" required placeholder="Örn: Kıdemli Yazılım Geliştirici">
+          </div>
+          <div class="form-group">
+            <label for="company">Şirket / Kurum Adı *</label>
+            <input type="text" id="company" name="company" required placeholder="Örn: Aselsan / İÜ Teknokent">
+          </div>
+          <div class="form-group">
+            <label for="location">Konum / Şehir</label>
+            <input type="text" id="location" name="location" placeholder="Örn: İstanbul / Hibrit veya Uzaktan">
+          </div>
+          <div class="form-group">
+            <label for="employmentType">Çalışma Türü *</label>
+            <select id="employmentType" name="employmentType" required>
+              <option value="full-time">Tam Zamanlı (full-time)</option>
+              <option value="part-time">Yarı Zamanlı (part-time)</option>
+              <option value="internship">Staj (internship)</option>
+              <option value="contract">Sözleşmeli (contract)</option>
+              <option value="remote">Uzaktan (remote)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="salaryRange">Maaş Aralığı</label>
+            <input type="text" id="salaryRange" name="salaryRange" placeholder="Örn: 75.000 - 110.000 TL">
+          </div>
+          <div class="form-group">
+            <label for="deadline">Son Başvuru Tarihi</label>
+            <input type="date" id="deadline" name="deadline">
+          </div>
+          <div class="form-group">
+            <label for="contactEmail">İletişim / Başvuru E-Postası</label>
+            <input type="email" id="contactEmail" name="contactEmail" placeholder="Örn: kariyer@kurum.com">
+          </div>
+          <div class="form-group">
+            <label for="applicationUrl">Online Başvuru Bağlantısı (URL)</label>
+            <input type="url" id="applicationUrl" name="applicationUrl" placeholder="Örn: https://kurum.com/kariyer">
+          </div>
+          <div class="form-group">
+            <label for="postedBy">İlanı Yayınlayan Mezun (posted_by)</label>
+            <select id="postedBy" name="postedBy">
+              <option value="">-- Mezun Seçiniz (Opsiyonel) --</option>
+              ${userOptions}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="departmentId">Hedef Fakülte / Bölüm</label>
+            <select id="departmentId" name="departmentId">
+              <option value="">-- Tüm Bölümler / Genel --</option>
+              ${deptOptions}
+            </select>
+          </div>
+          <div class="form-group full-width">
+            <label for="description">İş Tanımı ve Detaylar *</label>
+            <textarea id="description" name="description" rows="4" required placeholder="Pozisyon görevleri, çalışma ortamı ve beklentiler..."></textarea>
+          </div>
+          <div class="form-group full-width">
+            <label for="requirements">Aday Kriterleri ve Gereksinimler</label>
+            <textarea id="requirements" name="requirements" rows="3" placeholder="Aranan teknolojiler, deneyim seviyesi, yetkinlikler..."></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">🚀 İlanı Yayınla</button>
+            <a href="/job-postings" class="btn btn-secondary">Temizle</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  `;
+
+  return renderLayout({
+    title: 'Kariyer ve İş İlanları | İstanbul Üniversitesi Mezun Bilgi Sistemi',
+    activeNav: 'jobs',
+    pageTitle: '💼 Kariyer ve İş Fırsatları',
+    pageSubtitle: 'İstanbul Üniversitesi mezun ağı ve partner kurumların sunduğu iş ve staj olanakları.',
+    breadcrumbsHtml: '<a href="/">Ana Sayfa</a> <span class="separator">/</span> <span class="current">Kariyer & İlanlar</span>',
+    content,
+  });
 };
 
 /**
@@ -437,125 +206,127 @@ const renderJobPostingDetailPage = (job, extraData = { poster: null, department:
   const applications = extraData.applications || [];
 
   const appRows = applications.length === 0
-    ? `<tr><td colspan="5" style="text-align: center; color: #777; padding: 15px;">Bu ilana henüz başvuru yapılmamış.</td></tr>`
+    ? `<tr><td colspan="5" class="empty-state" style="padding: 24px;"><p>Bu ilana henüz başvuru yapılmamış.</p></td></tr>`
     : applications
         .map(
           (app) => `
       <tr>
-        <td><strong>#${app.id}</strong></td>
-        <td>User #${app.userId}</td>
-        <td><span class="badge badge-type">${app.status}</span></td>
-        <td>${app.appliedAt ? app.appliedAt.substring(0, 10) : '-'}</td>
-        <td>
-          <a href="/applications/${app.id}" class="btn-detail" title="Başvuru Detayı">Gör</a>
+        <td><strong>#${escapeHtml(app.id)}</strong></td>
+        <td>Kullanıcı #${escapeHtml(app.userId)}</td>
+        <td><span class="badge badge-info">${escapeHtml(app.status)}</span></td>
+        <td>${app.appliedAt ? escapeHtml(app.appliedAt.substring(0, 10)) : '-'}</td>
+        <td style="text-align: right;">
+          <a href="/applications/${escapeHtml(app.id)}" class="btn btn-secondary btn-sm" title="Başvuru Detayı">Görüntüle</a>
         </td>
       </tr>
     `
         )
         .join('');
 
-  return `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${job.title} @ ${job.company} - İş İlanı Detayı</title>
-  <style>${baseStyles}</style>
-</head>
-<body>
-  <div class="nav">
-    <a href="/job-postings">← İş İlanları Listesi</a>
-    <a href="/applications">Başvurular</a>
-    <a href="/users">Mezunlar</a>
-  </div>
-
-  <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
-      <div>
-        <h1 style="border: none; margin-bottom: 5px;">${job.title}</h1>
-        <h3 style="color: #4a5568; margin-top: 0;">🏢 ${job.company}</h3>
+  const content = `
+    <div class="card" style="max-width: 900px; margin: 0 auto 30px auto;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; padding-bottom: 20px; border-bottom: 1.5px solid #E5E7EB; margin-bottom: 24px;">
+        <div>
+          <div style="font-size: 13px; color: #6B7280; font-weight: 700; text-transform: uppercase;">İlan #${escapeHtml(job.id)}</div>
+          <h1 style="font-size: 26px; font-weight: 700; color: #111827; margin: 4px 0 6px 0;">${escapeHtml(job.title)}</h1>
+          <div style="font-size: 18px; color: #1F2937; font-weight: 600;">🏢 ${escapeHtml(job.company)}</div>
+        </div>
+        <div>
+          ${job.isActive ? '<span class="badge badge-success" style="font-size: 14px; padding: 6px 16px;">Aktif İlan</span>' : '<span class="badge badge-danger" style="font-size: 14px; padding: 6px 16px;">Pasif İlan</span>'}
+        </div>
       </div>
-      <div>
-        ${job.isActive ? '<span class="badge badge-active" style="font-size: 1em; padding: 6px 12px;">Aktif İlan</span>' : '<span class="badge badge-inactive" style="font-size: 1em; padding: 6px 12px;">Pasif İlan</span>'}
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px;">
+        <div style="background-color: #F9FAFB; padding: 14px 18px; border-radius: 12px; border: 1px solid #E5E7EB;">
+          <div style="font-size: 12px; color: #6B7280; font-weight: 700; text-transform: uppercase;">Konum</div>
+          <div style="font-size: 15px; font-weight: 600; color: #111827; margin-top: 4px;">📍 ${escapeHtml(job.location || 'Belirtilmedi')}</div>
+        </div>
+        <div style="background-color: #F9FAFB; padding: 14px 18px; border-radius: 12px; border: 1px solid #E5E7EB;">
+          <div style="font-size: 12px; color: #6B7280; font-weight: 700; text-transform: uppercase;">Çalışma Türü</div>
+          <div style="font-size: 15px; font-weight: 600; color: #111827; margin-top: 4px;">💼 ${escapeHtml(job.employmentType || 'full-time')}</div>
+        </div>
+        <div style="background-color: #F9FAFB; padding: 14px 18px; border-radius: 12px; border: 1px solid #E5E7EB;">
+          <div style="font-size: 12px; color: #6B7280; font-weight: 700; text-transform: uppercase;">Maaş Aralığı</div>
+          <div style="font-size: 15px; font-weight: 600; color: #111827; margin-top: 4px;">💰 ${escapeHtml(job.salaryRange || 'Belirtilmedi')}</div>
+        </div>
+        <div style="background-color: #F9FAFB; padding: 14px 18px; border-radius: 12px; border: 1px solid #E5E7EB;">
+          <div style="font-size: 12px; color: #6B7280; font-weight: 700; text-transform: uppercase;">Son Başvuru</div>
+          <div style="font-size: 15px; font-weight: 600; color: #111827; margin-top: 4px;">📅 ${job.deadline ? escapeHtml(job.deadline) : 'Süresiz'}</div>
+        </div>
+        <div style="background-color: #F9FAFB; padding: 14px 18px; border-radius: 12px; border: 1px solid #E5E7EB;">
+          <div style="font-size: 12px; color: #6B7280; font-weight: 700; text-transform: uppercase;">İletişim E-Posta</div>
+          <div style="font-size: 14px; font-weight: 600; margin-top: 4px;">
+            ${job.contactEmail ? `<a href="mailto:${escapeHtml(job.contactEmail)}" style="color: #111827; text-decoration: underline;">${escapeHtml(job.contactEmail)}</a>` : 'Belirtilmedi'}
+          </div>
+        </div>
+        <div style="background-color: #F9FAFB; padding: 14px 18px; border-radius: 12px; border: 1px solid #E5E7EB;">
+          <div style="font-size: 12px; color: #6B7280; font-weight: 700; text-transform: uppercase;">Hedef Bölüm</div>
+          <div style="font-size: 14px; font-weight: 600; color: #111827; margin-top: 4px;">
+            ${department ? escapeHtml(department.name) : 'Tüm Bölümler'}
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <h3 style="font-size: 17px; font-weight: 700; color: #111827; margin-bottom: 10px;">📝 İş Tanımı</h3>
+        <div style="background-color: #FAFAFA; padding: 20px; border-radius: 12px; border: 1px solid #E5E7EB; line-height: 1.7; color: #374151; white-space: pre-line;">
+${escapeHtml(job.description)}
+        </div>
+      </div>
+
+      ${job.requirements ? `
+      <div style="margin-bottom: 28px;">
+        <h3 style="font-size: 17px; font-weight: 700; color: #111827; margin-bottom: 10px;">🎯 Aday Kriterleri ve Gereksinimler</h3>
+        <div style="background-color: #FAFAFA; padding: 20px; border-radius: 12px; border: 1px solid #E5E7EB; line-height: 1.7; color: #374151; white-space: pre-line;">
+${escapeHtml(job.requirements)}
+        </div>
+      </div>
+      ` : ''}
+
+      <div style="display: flex; gap: 12px; align-items: center; border-top: 1.5px solid #E5E7EB; padding-top: 20px; flex-wrap: wrap;">
+        <a href="/job-postings" class="btn btn-secondary">← Tüm İlanlar</a>
+        <a href="/job-postings/${escapeHtml(job.id)}/edit" class="btn btn-outline" style="color: #111827; border-color: #D1D5DB;">✏️ Düzenle</a>
+        <a href="/applications?job_id=${escapeHtml(job.id)}" class="btn btn-primary">📄 Bu İlana Başvuru Yap</a>
+        ${job.applicationUrl ? `<a href="${escapeHtml(job.applicationUrl)}" target="_blank" rel="noopener" class="btn btn-secondary">Şirket Başvuru Sayfası ↗</a>` : ''}
+        <form method="POST" action="/job-postings/${escapeHtml(job.id)}/delete" style="display: inline; margin-left: auto;" onsubmit="return confirm('${escapeHtml(job.title)} ilanını silmek istediğinize emin misiniz?');">
+          <button type="submit" class="btn btn-danger">🗑️ İlanı Sil</button>
+        </form>
       </div>
     </div>
 
-    <div class="detail-grid">
-      <div class="detail-item">
-        <div class="detail-label">Konum</div>
-        <div class="detail-value">📍 ${job.location || 'Belirtilmedi'}</div>
+    <!-- Bu İlana Yapılan Başvurular -->
+    <div class="card" style="max-width: 900px; margin: 0 auto;">
+      <div class="card-title">
+        <span>📨 Bu İlana Yapılan Başvurular</span>
+        <span class="badge badge-dark">${applications.length} Başvuru</span>
       </div>
-      <div class="detail-item">
-        <div class="detail-label">Çalışma Türü</div>
-        <div class="detail-value">💼 ${job.employmentType || 'full-time'}</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Maaş Aralığı</div>
-        <div class="detail-value">💰 ${job.salaryRange || 'Belirtilmedi'}</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Son Başvuru Tarihi</div>
-        <div class="detail-value">📅 ${job.deadline ? job.deadline : 'Süresiz'}</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">İletişim E-Postası</div>
-        <div class="detail-value">✉️ ${job.contactEmail ? `<a href="mailto:${job.contactEmail}">${job.contactEmail}</a>` : 'Belirtilmedi'}</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Başvuru Bağlantısı</div>
-        <div class="detail-value">🔗 ${job.applicationUrl ? `<a href="${job.applicationUrl}" target="_blank">Başvuru Sayfasına Git ↗</a>` : 'Belirtilmedi'}</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Yayınlayan Mezun</div>
-        <div class="detail-value">👤 ${poster ? `<a href="/users/${poster.id}">${poster.name}</a>` : (job.postedBy ? `User #${job.postedBy}` : 'Genel / Kurumsal')}</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Hedef Bölüm</div>
-        <div class="detail-value">🏛️ ${department ? `${department.name} (${department.code})` : (job.departmentId ? `Dept #${job.departmentId}` : 'Tüm Bölümler')}</div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 50px;">ID</th>
+              <th>Aday Bilgisi</th>
+              <th>Başvuru Durumu</th>
+              <th>Tarih</th>
+              <th style="text-align: right;">Detay</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${appRows}
+          </tbody>
+        </table>
       </div>
     </div>
+  `;
 
-    <h3>📝 İş Tanımı</h3>
-    <div style="background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; white-space: pre-line; margin-bottom: 20px;">
-      ${job.description}
-    </div>
-
-    ${job.requirements ? `
-    <h3>🎯 Aday Kriterleri ve Gereksinimler</h3>
-    <div style="background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; white-space: pre-line; margin-bottom: 20px;">
-      ${job.requirements}
-    </div>` : ''}
-
-    <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #eaecef; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-      <a href="/job-postings/${job.id}/edit" class="btn-edit" style="padding: 8px 16px; font-size: 0.95em;">✏️ İlanı Düzenle</a>
-      <a href="/applications?job_id=${job.id}" class="btn-detail" style="padding: 8px 16px; font-size: 0.95em; background-color: #2ea44f;">📄 Başvuru Yap</a>
-      <form method="POST" action="/job-postings/${job.id}/delete" style="display: inline;" onsubmit="return confirm('${job.title} ilanını silmek istediğinize emin misiniz?');">
-        <button type="submit" class="btn-delete" style="padding: 8px 16px; font-size: 0.95em;">🗑️ İlanı Sil</button>
-      </form>
-      <a href="/job-postings" class="btn-secondary" style="margin-left: auto;">İlanlar Listesine Dön</a>
-    </div>
-  </div>
-
-  <!-- Bu İlana Yapılan Başvurular Tablosu -->
-  <div class="card">
-    <h3>📨 Bu İlana Yapılan Başvurular (${applications.length})</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Aday ID</th>
-          <th>Durum</th>
-          <th>Tarih</th>
-          <th>Detay</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${appRows}
-      </tbody>
-    </table>
-  </div>
-</body>
-</html>`;
+  return renderLayout({
+    title: `${escapeHtml(job.title)} @ ${escapeHtml(job.company)} | İÜ Mezun`,
+    activeNav: 'jobs',
+    pageTitle: `${escapeHtml(job.title)}`,
+    pageSubtitle: `🏢 ${escapeHtml(job.company)} &bull; ${escapeHtml(job.location || 'Konum Belirtilmedi')}`,
+    breadcrumbsHtml: `<a href="/">Ana Sayfa</a> <span class="separator">/</span> <a href="/job-postings">İlanlar</a> <span class="separator">/</span> <span class="current">Detay</span>`,
+    content,
+  });
 };
 
 /**
@@ -571,120 +342,115 @@ const renderEditJobPostingPage = (job, options = {}, extraData = { users: [], de
 
   let alertBox = '';
   if (options.error) {
-    alertBox = `<div class="alert alert-error">❌ ${options.error}</div>`;
+    alertBox = `<div class="alert alert-error"><span>❌</span><div>${escapeHtml(options.error)}</div></div>`;
   }
 
   const userOptions = users
     .map(
       (u) =>
-        `<option value="${u.id}" ${job.postedBy === u.id ? 'selected' : ''}>${u.name} (${u.email})</option>`
+        `<option value="${escapeHtml(u.id)}" ${job.postedBy === u.id ? 'selected' : ''}>${escapeHtml(u.name)} (${escapeHtml(u.email)})</option>`
     )
     .join('');
 
   const deptOptions = departments
     .map(
       (d) =>
-        `<option value="${d.id}" ${job.departmentId === d.id ? 'selected' : ''}>${d.name} (${d.code})</option>`
+        `<option value="${escapeHtml(d.id)}" ${job.departmentId === d.id ? 'selected' : ''}>${escapeHtml(d.name)} (${escapeHtml(d.code)})</option>`
     )
     .join('');
 
-  return `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>İlan Düzenle: ${job.title} - Alumni Tracking System</title>
-  <style>${baseStyles}</style>
-</head>
-<body>
-  <div class="nav">
-    <a href="/job-postings">← İlanlar Listesi</a>
-    <a href="/job-postings/${job.id}">İlan Detayı</a>
-  </div>
+  const content = `
+    ${alertBox}
 
-  <h1>✏️ İş İlanını Düzenle (#${job.id})</h1>
-  ${alertBox}
-
-  <div class="card">
-    <form method="POST" action="/job-postings/${job.id}/update">
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="title">İlan Başlığı *</label>
-          <input type="text" id="title" name="title" required value="${job.title || ''}">
-        </div>
-        <div class="form-group">
-          <label for="company">Şirket / Kurum Adı *</label>
-          <input type="text" id="company" name="company" required value="${job.company || ''}">
-        </div>
-        <div class="form-group">
-          <label for="location">Konum</label>
-          <input type="text" id="location" name="location" value="${job.location || ''}">
-        </div>
-        <div class="form-group">
-          <label for="employmentType">Çalışma Türü *</label>
-          <select id="employmentType" name="employmentType" required>
-            <option value="full-time" ${job.employmentType === 'full-time' ? 'selected' : ''}>Tam Zamanlı (full-time)</option>
-            <option value="part-time" ${job.employmentType === 'part-time' ? 'selected' : ''}>Yarı Zamanlı (part-time)</option>
-            <option value="internship" ${job.employmentType === 'internship' ? 'selected' : ''}>Staj (internship)</option>
-            <option value="contract" ${job.employmentType === 'contract' ? 'selected' : ''}>Sözleşmeli (contract)</option>
-            <option value="remote" ${job.employmentType === 'remote' ? 'selected' : ''}>Uzaktan (remote)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="salaryRange">Maaş Aralığı</label>
-          <input type="text" id="salaryRange" name="salaryRange" value="${job.salaryRange || ''}">
-        </div>
-        <div class="form-group">
-          <label for="deadline">Son Başvuru Tarihi</label>
-          <input type="date" id="deadline" name="deadline" value="${job.deadline ? job.deadline : ''}">
-        </div>
-        <div class="form-group">
-          <label for="contactEmail">İletişim E-Postası</label>
-          <input type="email" id="contactEmail" name="contactEmail" value="${job.contactEmail || ''}">
-        </div>
-        <div class="form-group">
-          <label for="applicationUrl">Başvuru Bağlantısı (URL)</label>
-          <input type="url" id="applicationUrl" name="applicationUrl" value="${job.applicationUrl || ''}">
-        </div>
-        <div class="form-group">
-          <label for="postedBy">Yayınlayan Mezun</label>
-          <select id="postedBy" name="postedBy">
-            <option value="">-- Seçiniz (Opsiyonel) --</option>
-            ${userOptions}
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="departmentId">Hedef Bölüm</label>
-          <select id="departmentId" name="departmentId">
-            <option value="">-- Tüm Bölümler / Genel --</option>
-            ${deptOptions}
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="isActive">İlan Durumu</label>
-          <select id="isActive" name="isActive">
-            <option value="true" ${job.isActive ? 'selected' : ''}>Aktif</option>
-            <option value="false" ${!job.isActive ? 'selected' : ''}>Pasif / Arşiv</option>
-          </select>
-        </div>
-        <div class="form-group full-width">
-          <label for="description">İş Tanımı *</label>
-          <textarea id="description" name="description" rows="4" required>${job.description || ''}</textarea>
-        </div>
-        <div class="form-group full-width">
-          <label for="requirements">Aday Kriterleri ve Gereksinimler</label>
-          <textarea id="requirements" name="requirements" rows="3">${job.requirements || ''}</textarea>
-        </div>
-
-        <div style="grid-column: 1 / -1; display: flex; gap: 10px; margin-top: 10px;">
-          <button type="submit" class="btn-submit" style="flex: 1;">💾 Değişiklikleri Kaydet</button>
-          <a href="/job-postings/${job.id}" class="btn-secondary" style="flex: 0 0 auto; display: flex; align-items: center;">İptal</a>
-        </div>
+    <div class="card" style="max-width: 860px; margin: 0 auto;">
+      <div class="card-title">
+        <span>✏️ İş İlanını Düzenle</span>
+        <span class="badge badge-warning">İlan ID: #${escapeHtml(job.id)}</span>
       </div>
-    </form>
-  </div>
-</body>
-</html>`;
+      <p style="color: #4B5563; font-size: 14px; margin-bottom: 24px;">
+        <strong>${escapeHtml(job.title)}</strong> pozisyonunun başvuru koşullarını ve ilan detaylarını güncelliyorsunuz.
+      </p>
+
+      <form method="POST" action="/job-postings/${escapeHtml(job.id)}/update">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="title">İlan Başlığı *</label>
+            <input type="text" id="title" name="title" required value="${escapeHtml(job.title || '')}">
+          </div>
+          <div class="form-group">
+            <label for="company">Şirket / Kurum Adı *</label>
+            <input type="text" id="company" name="company" required value="${escapeHtml(job.company || '')}">
+          </div>
+          <div class="form-group">
+            <label for="location">Konum / Şehir</label>
+            <input type="text" id="location" name="location" value="${escapeHtml(job.location || '')}">
+          </div>
+          <div class="form-group">
+            <label for="employmentType">Çalışma Türü *</label>
+            <select id="employmentType" name="employmentType" required>
+              <option value="full-time" ${job.employmentType === 'full-time' ? 'selected' : ''}>Tam Zamanlı (full-time)</option>
+              <option value="part-time" ${job.employmentType === 'part-time' ? 'selected' : ''}>Yarı Zamanlı (part-time)</option>
+              <option value="internship" ${job.employmentType === 'internship' ? 'selected' : ''}>Staj (internship)</option>
+              <option value="contract" ${job.employmentType === 'contract' ? 'selected' : ''}>Sözleşmeli (contract)</option>
+              <option value="remote" ${job.employmentType === 'remote' ? 'selected' : ''}>Uzaktan (remote)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="salaryRange">Maaş Aralığı</label>
+            <input type="text" id="salaryRange" name="salaryRange" value="${escapeHtml(job.salaryRange || '')}">
+          </div>
+          <div class="form-group">
+            <label for="deadline">Son Başvuru Tarihi</label>
+            <input type="date" id="deadline" name="deadline" value="${job.deadline ? escapeHtml(job.deadline) : ''}">
+          </div>
+          <div class="form-group">
+            <label for="contactEmail">İletişim E-Postası</label>
+            <input type="email" id="contactEmail" name="contactEmail" value="${escapeHtml(job.contactEmail || '')}">
+          </div>
+          <div class="form-group">
+            <label for="applicationUrl">Başvuru Bağlantısı (URL)</label>
+            <input type="url" id="applicationUrl" name="applicationUrl" value="${escapeHtml(job.applicationUrl || '')}">
+          </div>
+          <div class="form-group">
+            <label for="postedBy">Yayınlayan Mezun</label>
+            <select id="postedBy" name="postedBy">
+              <option value="">-- Mezun Seçiniz (Opsiyonel) --</option>
+              ${userOptions}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="departmentId">Hedef Bölüm</label>
+            <select id="departmentId" name="departmentId">
+              <option value="">-- Tüm Bölümler / Genel --</option>
+              ${deptOptions}
+            </select>
+          </div>
+          <div class="form-group full-width">
+            <label for="description">İş Tanımı *</label>
+            <textarea id="description" name="description" rows="4" required>${escapeHtml(job.description || '')}</textarea>
+          </div>
+          <div class="form-group full-width">
+            <label for="requirements">Aday Kriterleri</label>
+            <textarea id="requirements" name="requirements" rows="3">${escapeHtml(job.requirements || '')}</textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 Değişiklikleri Kaydet</button>
+            <a href="/job-postings/${escapeHtml(job.id)}" class="btn btn-secondary">İptal</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  `;
+
+  return renderLayout({
+    title: `${escapeHtml(job.title)} - Düzenle | İÜ Mezun`,
+    activeNav: 'jobs',
+    pageTitle: '✏️ İş İlanını Düzenle',
+    pageSubtitle: `#${escapeHtml(job.id)} numaralı ilan kaydını güncelleyin.`,
+    breadcrumbsHtml: `<a href="/">Ana Sayfa</a> <span class="separator">/</span> <a href="/job-postings">İlanlar</a> <span class="separator">/</span> <span class="current">Düzenle</span>`,
+    content,
+  });
 };
 
 /**
@@ -693,25 +459,27 @@ const renderEditJobPostingPage = (job, options = {}, extraData = { users: [], de
  * @returns {string} Tam HTML çıktısı
  */
 const renderJobPostingNotFoundPage = (id) => {
-  return `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>İş İlanı Bulunamadı - 404</title>
-  <style>${baseStyles}</style>
-</head>
-<body>
-  <div class="nav">
-    <a href="/job-postings">← İş İlanları Listesi</a>
-  </div>
-  <div class="card" style="text-align: center; padding: 40px 20px;">
-    <h2>❌ İş İlanı Bulunamadı (404)</h2>
-    <p>Aradığınız <strong>#${id}</strong> numaralı iş ilanı sistemde mevcut değil.</p>
-    <a href="/job-postings" class="btn-detail" style="display: inline-block; margin-top: 15px; padding: 8px 16px;">İş İlanları Listesine Dön</a>
-  </div>
-</body>
-</html>`;
+  const content = `
+    <div class="card" style="max-width: 680px; margin: 40px auto; text-align: center; padding: 48px 24px;">
+      <div style="font-size: 52px; margin-bottom: 12px;">💼 ❌</div>
+      <span class="badge badge-danger" style="margin-bottom: 14px;">404 BULUNAMADI</span>
+      <h2 style="font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 8px;">İş İlanı Bulunamadı</h2>
+      <p style="color: #4B5563; font-size: 15px; margin-bottom: 24px;">
+        Aradığınız <strong>#${escapeHtml(id)}</strong> numaralı iş ilanı sistemde mevcut değil veya süresi dolduğu için yayından kaldırılmış.
+      </p>
+      <div style="display: flex; justify-content: center; gap: 12px;">
+        <a href="/job-postings" class="btn btn-primary">← İş İlanları Listesine Dön</a>
+        <a href="/" class="btn btn-secondary">Ana Sayfa</a>
+      </div>
+    </div>
+  `;
+
+  return renderLayout({
+    title: 'İş İlanı Bulunamadı (404) | İÜ Mezun',
+    activeNav: 'jobs',
+    breadcrumbsHtml: '<a href="/">Ana Sayfa</a> <span class="separator">/</span> <a href="/job-postings">İlanlar</a> <span class="separator">/</span> <span class="current">İlan Bulunamadı</span>',
+    content,
+  });
 };
 
 module.exports = {

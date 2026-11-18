@@ -1,237 +1,13 @@
 /**
- * Announcement View (Görünüm Katmanı)
+ * Announcement View (Görünüm Katmanı) - İstanbul Üniversitesi Mezun Bilgi Sistemi
  * 
- * MVC mimarisinin View katmanıdır.
- * Duyurular listesi, duyuru oluşturma formu, düzenleme formu
- * ve duyuru detay sayfası için gerekli HTML şablonlarını oluşturmaktan sorumludur.
+ * design.md tasarım sistemine uygun:
+ * - Koyu yeşil zemin: #214539
+ * - Header, Menü, Logo, Footer
+ * - Beyaz kartlar, sarı butonlar ve Arial tipografi
  */
 
-const baseStyles = `
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    max-width: 900px;
-    margin: 40px auto;
-    padding: 0 20px;
-    line-height: 1.6;
-    color: #333;
-    background-color: #fcfcfc;
-  }
-  h1, h2, h3 {
-    color: #2c3e50;
-  }
-  h1 {
-    border-bottom: 2px solid #eaecef;
-    padding-bottom: 10px;
-    margin-top: 10px;
-  }
-  .nav {
-    margin-bottom: 25px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #eaecef;
-  }
-  .nav a {
-    color: #0366d6;
-    text-decoration: none;
-    margin-right: 18px;
-    font-weight: 500;
-  }
-  .nav a:hover {
-    text-decoration: underline;
-  }
-  .alert {
-    padding: 12px 18px;
-    border-radius: 6px;
-    margin-bottom: 20px;
-    font-size: 0.95em;
-  }
-  .alert-success {
-    background-color: #e6ffed;
-    border: 1px solid #acf2bd;
-    color: #155724;
-  }
-  .alert-error {
-    background-color: #ffeef0;
-    border: 1px solid #fdaeb7;
-    color: #86181d;
-  }
-  .card {
-    background: white;
-    padding: 20px 24px;
-    border-radius: 8px;
-    border: 1px solid #e1e4e8;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    margin-bottom: 30px;
-  }
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-  .form-full {
-    grid-column: 1 / -1;
-  }
-  @media (max-width: 600px) {
-    .form-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-  .form-group {
-    display: flex;
-    flex-direction: column;
-  }
-  .form-group label {
-    font-weight: 600;
-    margin-bottom: 6px;
-    font-size: 0.9em;
-    color: #444;
-  }
-  .form-group input, .form-group textarea, .form-group select {
-    padding: 9px 12px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 0.95em;
-    outline: none;
-    font-family: inherit;
-    transition: border-color 0.2s;
-  }
-  .form-group textarea {
-    min-height: 100px;
-    resize: vertical;
-  }
-  .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
-    border-color: #0366d6;
-    box-shadow: 0 0 0 3px rgba(3, 102, 214, 0.15);
-  }
-  .btn-submit {
-    grid-column: 1 / -1;
-    background-color: #2ea44f;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 1em;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    margin-top: 8px;
-  }
-  .btn-submit:hover {
-    background-color: #2c974b;
-  }
-  .btn-secondary {
-    padding: 10px 20px;
-    background: #e1e4e8;
-    color: #24292e;
-    border-radius: 6px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.95em;
-    display: inline-block;
-    text-align: center;
-    transition: background-color 0.2s;
-  }
-  .btn-secondary:hover {
-    background: #d1d5da;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-    background: white;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid #e1e4e8;
-  }
-  th {
-    background-color: #f6f8fa;
-    color: #24292e;
-    text-align: left;
-    padding: 12px 14px;
-    border-bottom: 2px solid #eaecef;
-    font-weight: 600;
-    font-size: 0.9em;
-  }
-  td {
-    padding: 12px 14px;
-    border-bottom: 1px solid #eaecef;
-    font-size: 0.95em;
-  }
-  tr:last-child td {
-    border-bottom: none;
-  }
-  tr:hover {
-    background-color: #fcfcfc;
-  }
-  .badge {
-    display: inline-block;
-    padding: 3px 8px;
-    border-radius: 12px;
-    font-size: 0.85em;
-    background: #e1f5fe;
-    color: #0288d1;
-    font-weight: 600;
-  }
-  .badge-category {
-    background: #ede7f6;
-    color: #5e35b1;
-  }
-  .btn-detail {
-    padding: 5px 9px;
-    background: #0366d6;
-    color: white;
-    border-radius: 4px;
-    text-decoration: none;
-    font-size: 0.85em;
-    font-weight: 500;
-    display: inline-block;
-  }
-  .btn-detail:hover {
-    background: #0255b5;
-  }
-  .btn-edit {
-    padding: 5px 9px;
-    background: #f1a30b;
-    color: white;
-    border-radius: 4px;
-    text-decoration: none;
-    font-size: 0.85em;
-    font-weight: 500;
-    display: inline-block;
-    margin-left: 4px;
-  }
-  .btn-edit:hover {
-    background: #d98e04;
-  }
-  .btn-delete {
-    padding: 5px 9px;
-    background: #d73a49;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 0.85em;
-    font-weight: 500;
-    cursor: pointer;
-    display: inline-block;
-    margin-left: 4px;
-    transition: background 0.2s;
-  }
-  .btn-delete:hover {
-    background: #cb2431;
-  }
-  .btn-back {
-    display: inline-block;
-    padding: 8px 16px;
-    background: #0366d6;
-    color: white;
-    text-decoration: none;
-    border-radius: 6px;
-    font-weight: 500;
-  }
-  .btn-back:hover {
-    background: #0255b5;
-  }
-`;
+const { renderLayout, escapeHtml } = require('./layout');
 
 /**
  * Duyurular Listesi ve Yeni Duyuru Ekleme Formu Sayfası (GET /announcements)
@@ -244,29 +20,31 @@ const renderAnnouncementsPage = (announcements = [], options = {}) => {
 
   let alertBox = '';
   if (options.success) {
-    alertBox = `<div class="alert alert-success">✅ ${options.success}</div>`;
+    alertBox = `<div class="alert alert-success"><span>✅</span><div>${escapeHtml(options.success)}</div></div>`;
   } else if (options.error) {
-    alertBox = `<div class="alert alert-error">❌ ${options.error}</div>`;
+    alertBox = `<div class="alert alert-error"><span>❌</span><div>${escapeHtml(options.error)}</div></div>`;
   }
 
   const rows = announcements.length === 0
-    ? `<tr><td colspan="6" style="text-align: center; color: #777; padding: 25px;">Henüz kayıtlı duyuru bulunmuyor.</td></tr>`
+    ? `<tr><td colspan="6" class="empty-state"><div class="empty-state-icon">📢</div><h3>Henüz yayınlanan duyuru bulunmuyor</h3><p>Aşağıdaki formu kullanarak üniversite ve mezun ağı için ilk duyuruyu yayınlayabilirsiniz.</p></td></tr>`
     : announcements
         .map(
           (a) => `
       <tr>
-        <td><strong>#${a.id}</strong></td>
+        <td><strong>#${escapeHtml(a.id)}</strong></td>
         <td>
-          <a href="/announcements/${a.id}" style="color: #0366d6; text-decoration: none; font-weight: 600;">${a.title}</a>
+          <a href="/announcements/${escapeHtml(a.id)}" style="font-weight: 700; color: #111827; text-decoration: none;">
+            ${escapeHtml(a.title)}
+          </a>
         </td>
-        <td><span class="badge badge-category">${a.category || 'Genel'}</span></td>
-        <td>${a.date || '-'}</td>
-        <td>${a.author || 'Yönetim'}</td>
-        <td style="white-space: nowrap;">
-          <a href="/announcements/${a.id}" class="btn-detail" title="Duyuruyu Görüntüle">Gör</a>
-          <a href="/announcements/${a.id}/edit" class="btn-edit" title="Duyuruyu Düzenle">Düzenle</a>
-          <form method="POST" action="/announcements/${a.id}/delete" style="display: inline;" onsubmit="return confirm('${a.title} başlıklı duyuruyu silmek istediğinize emin misiniz?');">
-            <button type="submit" class="btn-delete" title="Duyuruyu Sil">Sil</button>
+        <td><span class="badge badge-warning">${escapeHtml(a.category || 'Genel')}</span></td>
+        <td><strong>${escapeHtml(a.date || '-')}</strong></td>
+        <td>${escapeHtml(a.author || 'Yönetim')}</td>
+        <td style="white-space: nowrap; text-align: right;">
+          <a href="/announcements/${escapeHtml(a.id)}" class="btn btn-secondary btn-sm" title="Duyuruyu Görüntüle">Görüntüle</a>
+          <a href="/announcements/${escapeHtml(a.id)}/edit" class="btn btn-outline btn-sm" style="color: #111827; border-color: #D1D5DB; margin-left: 4px;" title="Duyuruyu Düzenle">Düzenle</a>
+          <form method="POST" action="/announcements/${escapeHtml(a.id)}/delete" style="display: inline; margin: 0;" onsubmit="return confirm('${escapeHtml(a.title)} başlıklı duyuruyu silmek istediğinize emin misiniz?');">
+            <button type="submit" class="btn btn-danger btn-sm" style="margin-left: 4px;" title="Duyuruyu Sil">Sil</button>
           </form>
         </td>
       </tr>
@@ -274,88 +52,91 @@ const renderAnnouncementsPage = (announcements = [], options = {}) => {
         )
         .join('');
 
-  return `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Duyurular - Alumni Tracking System</title>
-  <style>${baseStyles}</style>
-</head>
-<body>
-  <div class="nav">
-    <a href="/">← Ana Sayfa</a>
-    <a href="/about">Hakkında</a>
-    <a href="/users">Mezunlar (Web)</a>
-    <a href="/announcements"><strong>Duyurular (Web)</strong></a>
-    <a href="/job-postings">İş İlanları (Web)</a>
-    <a href="/applications">Başvurular (Web)</a>
-    <a href="/api/announcements" target="_blank">JSON API (/api/announcements)</a>
-    <a href="/api/swagger" target="_blank">Swagger Dokümantasyonu</a>
-  </div>
+  const content = `
+    ${alertBox}
 
-  <h1>📢 Duyurular Paneli (Announcements)</h1>
-  <p>Alumni Tracking System duyuru yönetim görünümü (View). Buradan yeni duyurular yayınlayabilir, mevcut duyuruları inceleyebilir, güncelleyebilir veya silebilirsiniz.</p>
-
-  ${alertBox}
-
-  <!-- Yeni Duyuru Ekleme Formu (POST /announcements) -->
-  <div class="card">
-    <h3 style="margin-top: 0; margin-bottom: 15px;">➕ Yeni Duyuru Yayınla</h3>
-    <form method="POST" action="/announcements">
-      <div class="form-grid">
-        <div class="form-group form-full">
-          <label for="title">Duyuru Başlığı *</label>
-          <input type="text" id="title" name="title" required placeholder="Örn: 2026 Bahar Mezunlar Kokteyli">
+    <!-- Yayınlanan Duyurular Tablosu -->
+    <div class="card">
+      <div class="card-title">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span>📢 Yayınlanan Duyurular</span>
+          <span class="badge badge-dark">Toplam: ${announcements.length}</span>
         </div>
-        <div class="form-group">
-          <label for="category">Kategori</label>
-          <input type="text" id="category" name="category" placeholder="Örn: Etkinlik, Kariyer, Burs, Genel" value="Genel">
-        </div>
-        <div class="form-group">
-          <label for="author">Yayınlayan / Yazar</label>
-          <input type="text" id="author" name="author" placeholder="Örn: Mezunlar Derneği" value="Yönetim">
-        </div>
-        <div class="form-group">
-          <label for="date">Tarih</label>
-          <input type="date" id="date" name="date" value="${today}">
-        </div>
-        <div class="form-group form-full">
-          <label for="content">Duyuru İçeriği *</label>
-          <textarea id="content" name="content" required placeholder="Duyurunun detaylarını buraya yazın..."></textarea>
-        </div>
-        <button type="submit" class="btn-submit">📢 Duyuruyu Yayınla</button>
+        <a href="#new-announcement-form" class="btn btn-primary btn-sm">+ Yeni Duyuru Yayınla</a>
       </div>
-    </form>
-  </div>
 
-  <!-- Kayıtlı Duyurular Tablosu -->
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-    <h3 style="margin: 0;">📋 Yayınlanan Duyurular</h3>
-    <span class="badge">Toplam: ${announcements.length} Duyuru</span>
-  </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 60px;">ID</th>
+              <th>Duyuru Başlığı</th>
+              <th>Kategori</th>
+              <th>Tarih</th>
+              <th>Yayınlayan</th>
+              <th style="width: 200px; text-align: right;">İşlemler</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </div>
+    </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th style="width: 50px;">ID</th>
-        <th>Başlık</th>
-        <th>Kategori</th>
-        <th>Tarih</th>
-        <th>Yazar</th>
-        <th style="width: 170px;">İşlemler</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${rows}
-    </tbody>
-  </table>
+    <!-- Yeni Duyuru Ekleme Formu (POST /announcements) -->
+    <div class="card" id="new-announcement-form">
+      <div class="card-title">
+        <span>➕ Kampüs ve Mezun Duyurusu Yayınla</span>
+        <span class="badge badge-warning">Duyuru Paneli</span>
+      </div>
+      <p style="color: #4B5563; font-size: 14px; margin-bottom: 20px;">
+        İstanbul Üniversitesi mezunlar ağına ve öğrencilere yönelik etkinlik, burs, genel bildirim veya kariyer duyurusu oluşturun.
+      </p>
 
-  <div style="margin-top: 30px; font-size: 0.85em; color: #666; text-align: center;">
-    Alumni Tracking System • MVC View Katmanı (<code>backend/src/views/announcementView.js</code>)
-  </div>
-</body>
-</html>`;
+      <form method="POST" action="/announcements">
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label for="title">Duyuru Başlığı *</label>
+            <input type="text" id="title" name="title" required placeholder="Örn: 2026 Bahar Mezunlar Buluşması ve Kariyer Zirvesi">
+            <span class="form-help">Duyurunun ana manşeti (kısa ve net olmalıdır)</span>
+          </div>
+          <div class="form-group">
+            <label for="category">Kategori</label>
+            <input type="text" id="category" name="category" placeholder="Örn: Etkinlik, Kariyer, Burs, Genel" value="Genel">
+            <span class="form-help">Duyuru sınıflandırması</span>
+          </div>
+          <div class="form-group">
+            <label for="author">Yayınlayan / Yetkili Birim</label>
+            <input type="text" id="author" name="author" placeholder="Örn: Mezunlar Ofisi" value="Rektörlük">
+            <span class="form-help">Duyuruyu oluşturan akademik/idari birim</span>
+          </div>
+          <div class="form-group">
+            <label for="date">Etkinlik / Duyuru Tarihi</label>
+            <input type="date" id="date" name="date" value="${today}">
+          </div>
+          <div class="form-group full-width">
+            <label for="content">Duyuru İçeriği *</label>
+            <textarea id="content" name="content" rows="5" required placeholder="Duyurunun tüm detaylarını, tarih, saat, yer ve katılım koşullarını buraya yazınız..."></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">📢 Duyuruyu Yayınla</button>
+            <a href="/announcements" class="btn btn-secondary">Temizle</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  `;
+
+  return renderLayout({
+    title: 'Duyurular Paneli | İstanbul Üniversitesi Mezun Bilgi Sistemi',
+    activeNav: 'announcements',
+    pageTitle: '📢 Kampüs ve Mezun Duyuruları',
+    pageSubtitle: 'İstanbul Üniversitesi etkinlikleri, kariyer duyuruları ve kurumsal haber bülteni.',
+    breadcrumbsHtml: '<a href="/">Ana Sayfa</a> <span class="separator">/</span> <span class="current">Duyurular</span>',
+    content,
+  });
 };
 
 /**
@@ -367,65 +148,61 @@ const renderAnnouncementsPage = (announcements = [], options = {}) => {
 const renderEditAnnouncementPage = (announcement, options = {}) => {
   let alertBox = '';
   if (options.error) {
-    alertBox = `<div class="alert alert-error">❌ ${options.error}</div>`;
+    alertBox = `<div class="alert alert-error"><span>❌</span><div>${escapeHtml(options.error)}</div></div>`;
   }
 
-  return `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${announcement.title} - Duyuruyu Düzenle</title>
-  <style>${baseStyles}</style>
-</head>
-<body>
-  <div class="nav">
-    <a href="/">← Ana Sayfa</a>
-    <a href="/announcements">← Duyurular Listesi</a>
-    <a href="/announcements/${announcement.id}">Duyuruyu Gör</a>
-  </div>
+  const content = `
+    ${alertBox}
 
-  <h1>✏️ Duyuruyu Düzenle</h1>
-  <p><strong>#${announcement.id}</strong> numaralı <strong>${announcement.title}</strong> başlıklı duyuruyu güncelliyorsunuz.</p>
-
-  ${alertBox}
-
-  <div class="card">
-    <form method="POST" action="/announcements/${announcement.id}/update">
-      <div class="form-grid">
-        <div class="form-group form-full">
-          <label for="title">Duyuru Başlığı *</label>
-          <input type="text" id="title" name="title" value="${announcement.title}" required>
-        </div>
-        <div class="form-group">
-          <label for="category">Kategori</label>
-          <input type="text" id="category" name="category" value="${announcement.category || 'Genel'}">
-        </div>
-        <div class="form-group">
-          <label for="author">Yayınlayan / Yazar</label>
-          <input type="text" id="author" name="author" value="${announcement.author || 'Yönetim'}">
-        </div>
-        <div class="form-group">
-          <label for="date">Tarih</label>
-          <input type="date" id="date" name="date" value="${announcement.date || ''}">
-        </div>
-        <div class="form-group form-full">
-          <label for="content">Duyuru İçeriği *</label>
-          <textarea id="content" name="content" required>${announcement.content || ''}</textarea>
-        </div>
-        <div style="grid-column: 1 / -1; display: flex; gap: 12px; margin-top: 10px;">
-          <button type="submit" class="btn-submit" style="margin-top: 0; flex: 1;">💾 Değişiklikleri Kaydet</button>
-          <a href="/announcements" class="btn-secondary">İptal</a>
-        </div>
+    <div class="card" style="max-width: 860px; margin: 0 auto;">
+      <div class="card-title">
+        <span>✏️ Duyuru İçeriğini Güncelle</span>
+        <span class="badge badge-warning">Duyuru ID: #${escapeHtml(announcement.id)}</span>
       </div>
-    </form>
-  </div>
+      <p style="color: #4B5563; font-size: 14px; margin-bottom: 24px;">
+        <strong>${escapeHtml(announcement.title)}</strong> başlıklı duyurunun metnini veya yayın bilgilerini güncelliyorsunuz.
+      </p>
 
-  <div style="margin-top: 30px; font-size: 0.85em; color: #666; text-align: center;">
-    Alumni Tracking System • Düzenleme Formu (<code>POST /announcements/${announcement.id}/update</code>)
-  </div>
-</body>
-</html>`;
+      <form method="POST" action="/announcements/${escapeHtml(announcement.id)}/update">
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label for="title">Duyuru Başlığı *</label>
+            <input type="text" id="title" name="title" value="${escapeHtml(announcement.title)}" required>
+          </div>
+          <div class="form-group">
+            <label for="category">Kategori</label>
+            <input type="text" id="category" name="category" value="${escapeHtml(announcement.category || 'Genel')}">
+          </div>
+          <div class="form-group">
+            <label for="author">Yayınlayan</label>
+            <input type="text" id="author" name="author" value="${escapeHtml(announcement.author || 'Yönetim')}">
+          </div>
+          <div class="form-group">
+            <label for="date">Tarih</label>
+            <input type="date" id="date" name="date" value="${escapeHtml(announcement.date || '')}">
+          </div>
+          <div class="form-group full-width">
+            <label for="content">Duyuru İçeriği *</label>
+            <textarea id="content" name="content" rows="6" required>${escapeHtml(announcement.content || '')}</textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 Değişiklikleri Kaydet</button>
+            <a href="/announcements/${escapeHtml(announcement.id)}" class="btn btn-secondary">İptal</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  `;
+
+  return renderLayout({
+    title: `${escapeHtml(announcement.title)} - Düzenle | İÜ Mezun`,
+    activeNav: 'announcements',
+    pageTitle: '✏️ Duyuruyu Düzenle',
+    pageSubtitle: `#${escapeHtml(announcement.id)} numaralı duyuru kaydını güncelleyin.`,
+    breadcrumbsHtml: `<a href="/">Ana Sayfa</a> <span class="separator">/</span> <a href="/announcements">Duyurular</a> <span class="separator">/</span> <span class="current">Düzenle</span>`,
+    content,
+  });
 };
 
 /**
@@ -434,74 +211,47 @@ const renderEditAnnouncementPage = (announcement, options = {}) => {
  * @returns {string} Tam HTML çıktısı
  */
 const renderAnnouncementDetailPage = (announcement) => {
-  return `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${announcement.title} - Duyuru Detayı</title>
-  <style>
-    ${baseStyles}
-    .detail-card {
-      background: white;
-      border: 1px solid #e1e4e8;
-      border-radius: 8px;
-      padding: 30px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-    }
-    .meta-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 15px;
-      color: #586069;
-      font-size: 0.9em;
-      margin: 15px 0 25px 0;
-      padding-bottom: 15px;
-      border-bottom: 1px solid #eaecef;
-    }
-    .content-body {
-      font-size: 1.05em;
-      line-height: 1.7;
-      color: #24292e;
-      white-space: pre-line;
-      margin-bottom: 30px;
-    }
-  </style>
-</head>
-<body>
-  <div class="nav">
-    <a href="/announcements">← Duyurular Listesine Dön</a>
-    <a href="/api/announcements/${announcement.id}" target="_blank">JSON Görüntüle</a>
-  </div>
+  const content = `
+    <div class="card" style="max-width: 880px; margin: 0 auto;">
+      <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+        <span class="badge badge-dark">Duyuru #${escapeHtml(announcement.id)}</span>
+        <span class="badge badge-warning">${escapeHtml(announcement.category || 'Genel')}</span>
+      </div>
 
-  <div class="detail-card">
-    <div style="display: flex; gap: 8px; align-items: center;">
-      <span class="badge">Duyuru #${announcement.id}</span>
-      <span class="badge badge-category">${announcement.category || 'Genel'}</span>
-    </div>
-    <h1 style="border-bottom: none; margin-bottom: 0;">${announcement.title}</h1>
+      <h1 style="font-size: 26px; font-weight: 700; color: #111827; margin: 0 0 16px 0; line-height: 1.3;">
+        ${escapeHtml(announcement.title)}
+      </h1>
 
-    <div class="meta-bar">
-      <span>📅 <strong>Tarih:</strong> ${announcement.date || 'Belirtilmedi'}</span>
-      <span>✍️ <strong>Yazar:</strong> ${announcement.author || 'Yönetim'}</span>
-      ${announcement.createdAt ? `<span>🕒 <strong>Oluşturulma:</strong> ${announcement.createdAt}</span>` : ''}
-      ${announcement.updatedAt ? `<span>✏️ <strong>Güncellenme:</strong> ${announcement.updatedAt}</span>` : ''}
-    </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 20px; font-size: 13px; color: #6B7280; padding: 12px 0 18px 0; border-bottom: 1.5px solid #E5E7EB; margin-bottom: 24px;">
+        <span>📅 <strong>Tarih:</strong> ${escapeHtml(announcement.date || 'Belirtilmedi')}</span>
+        <span>✍️ <strong>Yayınlayan:</strong> ${escapeHtml(announcement.author || 'Yönetim')}</span>
+        ${announcement.createdAt ? `<span>🕒 <strong>Oluşturulma:</strong> ${escapeHtml(announcement.createdAt)}</span>` : ''}
+        ${announcement.updatedAt ? `<span>✏️ <strong>Güncellenme:</strong> ${escapeHtml(announcement.updatedAt)}</span>` : ''}
+      </div>
 
-    <div class="content-body">
-${announcement.content}
-    </div>
+      <div style="font-size: 16px; line-height: 1.8; color: #1F2937; white-space: pre-line; margin-bottom: 32px; background-color: #FAFAFA; padding: 24px; border-radius: 12px; border: 1px solid #E5E7EB;">
+${escapeHtml(announcement.content)}
+      </div>
 
-    <div style="margin-top: 25px; display: flex; gap: 10px; align-items: center; border-top: 1px solid #eaecef; padding-top: 20px;">
-      <a href="/announcements" class="btn-back">← Tüm Duyuruları Listele</a>
-      <a href="/announcements/${announcement.id}/edit" class="btn-edit" style="padding: 8px 16px; font-size: 0.95em;">✏️ Düzenle</a>
-      <form method="POST" action="/announcements/${announcement.id}/delete" style="display: inline; margin: 0;" onsubmit="return confirm('${announcement.title} başlıklı duyuruyu silmek istediğinize emin misiniz?');">
-        <button type="submit" class="btn-delete" style="padding: 8px 16px; font-size: 0.95em;">🗑️ Sil</button>
-      </form>
+      <div style="display: flex; gap: 12px; align-items: center; border-top: 1.5px solid #E5E7EB; padding-top: 20px; flex-wrap: wrap;">
+        <a href="/announcements" class="btn btn-secondary">← Tüm Duyuruları Listele</a>
+        <a href="/announcements/${escapeHtml(announcement.id)}/edit" class="btn btn-primary">✏️ Düzenle</a>
+        <a href="/api/announcements/${escapeHtml(announcement.id)}" target="_blank" class="btn btn-outline" style="color: #111827; border-color: #D1D5DB;">JSON API</a>
+        <form method="POST" action="/announcements/${escapeHtml(announcement.id)}/delete" style="display: inline; margin-left: auto;" onsubmit="return confirm('${escapeHtml(announcement.title)} başlıklı duyuruyu silmek istediğinize emin misiniz?');">
+          <button type="submit" class="btn btn-danger">🗑️ Duyuruyu Sil</button>
+        </form>
+      </div>
     </div>
-  </div>
-</body>
-</html>`;
+  `;
+
+  return renderLayout({
+    title: `${escapeHtml(announcement.title)} | İÜ Mezun`,
+    activeNav: 'announcements',
+    pageTitle: `${escapeHtml(announcement.title)}`,
+    pageSubtitle: `${escapeHtml(announcement.category || 'Genel')} Duyuru Detayı`,
+    breadcrumbsHtml: `<a href="/">Ana Sayfa</a> <span class="separator">/</span> <a href="/announcements">Duyurular</a> <span class="separator">/</span> <span class="current">Detay</span>`,
+    content,
+  });
 };
 
 /**
@@ -510,25 +260,27 @@ ${announcement.content}
  * @returns {string} Tam HTML çıktısı
  */
 const renderAnnouncementNotFoundPage = (id) => {
-  return `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Duyuru Bulunamadı - 404</title>
-  <style>${baseStyles}</style>
-</head>
-<body>
-  <div class="nav">
-    <a href="/announcements">← Duyurular Listesi</a>
-  </div>
-  <div class="card" style="text-align: center; padding: 40px 20px;">
-    <h2>❌ Duyuru Bulunamadı (404)</h2>
-    <p>Aradığınız <strong>#${id}</strong> numaralı duyuru sistemde mevcut değil.</p>
-    <a href="/announcements" class="btn-detail" style="display: inline-block; margin-top: 15px; padding: 8px 16px;">Duyurular Listesine Dön</a>
-  </div>
-</body>
-</html>`;
+  const content = `
+    <div class="card" style="max-width: 680px; margin: 40px auto; text-align: center; padding: 48px 24px;">
+      <div style="font-size: 52px; margin-bottom: 12px;">📢 ❌</div>
+      <span class="badge badge-danger" style="margin-bottom: 14px;">404 BULUNAMADI</span>
+      <h2 style="font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 8px;">Duyuru Bulunamadı</h2>
+      <p style="color: #4B5563; font-size: 15px; margin-bottom: 24px;">
+        Aradığınız <strong>#${escapeHtml(id)}</strong> numaralı duyuru sistemde mevcut değil veya yayından kaldırılmış.
+      </p>
+      <div style="display: flex; justify-content: center; gap: 12px;">
+        <a href="/announcements" class="btn btn-primary">← Duyurular Listesine Dön</a>
+        <a href="/" class="btn btn-secondary">Ana Sayfa</a>
+      </div>
+    </div>
+  `;
+
+  return renderLayout({
+    title: 'Duyuru Bulunamadı (404) | İÜ Mezun',
+    activeNav: 'announcements',
+    breadcrumbsHtml: '<a href="/">Ana Sayfa</a> <span class="separator">/</span> <a href="/announcements">Duyurular</a> <span class="separator">/</span> <span class="current">Duyuru Bulunamadı</span>',
+    content,
+  });
 };
 
 module.exports = {

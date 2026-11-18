@@ -1,291 +1,38 @@
 /**
- * Application View (Görünüm Katmanı)
+ * Application View (Görünüm Katmanı) - İstanbul Üniversitesi Mezun Bilgi Sistemi
  * 
- * MVC mimarisinin View katmanıdır.
- * İş başvuruları listesi, yeni başvuru formu, başvuru düzenleme formu
- * ve başvuru detay sayfası için gerekli HTML şablonlarını oluşturmaktan sorumludur.
+ * design.md tasarım sistemine uygun:
+ * - Koyu yeşil zemin: #214539
+ * - Header, Menü, Logo, Footer
+ * - Beyaz kartlar, sarı butonlar ve Arial tipografi
  */
 
-const baseStyles = `
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    max-width: 950px;
-    margin: 40px auto;
-    padding: 0 20px;
-    line-height: 1.6;
-    color: #333;
-    background-color: #fcfcfc;
-  }
-  h1, h2, h3 {
-    color: #2c3e50;
-  }
-  h1 {
-    border-bottom: 2px solid #eaecef;
-    padding-bottom: 10px;
-    margin-top: 10px;
-  }
-  .nav {
-    margin-bottom: 25px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #eaecef;
-  }
-  .nav a {
-    color: #0366d6;
-    text-decoration: none;
-    margin-right: 18px;
-    font-weight: 500;
-  }
-  .nav a:hover {
-    text-decoration: underline;
-  }
-  .alert {
-    padding: 12px 18px;
-    border-radius: 6px;
-    margin-bottom: 20px;
-    font-size: 0.95em;
-  }
-  .alert-success {
-    background-color: #e6ffed;
-    border: 1px solid #acf2bd;
-    color: #155724;
-  }
-  .alert-error {
-    background-color: #ffeef0;
-    border: 1px solid #fdaeb7;
-    color: #86181d;
-  }
-  .card {
-    background: white;
-    padding: 20px 24px;
-    border-radius: 8px;
-    border: 1px solid #e1e4e8;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    margin-bottom: 30px;
-  }
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-  @media (max-width: 700px) {
-    .form-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-  .form-group {
-    display: flex;
-    flex-direction: column;
-  }
-  .form-group.full-width {
-    grid-column: 1 / -1;
-  }
-  .form-group label {
-    font-weight: 600;
-    margin-bottom: 6px;
-    font-size: 0.9em;
-    color: #444;
-  }
-  .form-group input, .form-group select, .form-group textarea {
-    padding: 9px 12px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 0.95em;
-    outline: none;
-    font-family: inherit;
-    transition: border-color 0.2s;
-  }
-  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-    border-color: #0366d6;
-    box-shadow: 0 0 0 3px rgba(3, 102, 214, 0.15);
-  }
-  .btn-submit {
-    grid-column: 1 / -1;
-    background-color: #2ea44f;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 1em;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    margin-top: 8px;
-  }
-  .btn-submit:hover {
-    background-color: #2c974b;
-  }
-  .btn-secondary {
-    padding: 8px 16px;
-    background: #e1e4e8;
-    color: #24292e;
-    border-radius: 6px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.95em;
-    display: inline-block;
-    text-align: center;
-    transition: background-color 0.2s;
-  }
-  .btn-secondary:hover {
-    background: #d1d5da;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-    background: white;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid #e1e4e8;
-  }
-  th {
-    background-color: #f6f8fa;
-    color: #24292e;
-    text-align: left;
-    padding: 12px 14px;
-    border-bottom: 2px solid #eaecef;
-    font-weight: 600;
-    font-size: 0.9em;
-  }
-  td {
-    padding: 12px 14px;
-    border-bottom: 1px solid #eaecef;
-    font-size: 0.95em;
-    vertical-align: middle;
-  }
-  tr:last-child td {
-    border-bottom: none;
-  }
-  tr:hover {
-    background-color: #fcfcfc;
-  }
-  .badge {
-    display: inline-block;
-    padding: 3px 8px;
-    border-radius: 12px;
-    font-size: 0.8em;
-    font-weight: 600;
-    text-transform: capitalize;
-  }
-  .badge-pending {
-    background: #fff8c5;
-    color: #9a6700;
-    border: 1px solid #f9e2af;
-  }
-  .badge-reviewed {
-    background: #ddf4ff;
-    color: #0969da;
-    border: 1px solid #b6e3ff;
-  }
-  .badge-interview {
-    background: #fbefff;
-    color: #8250df;
-    border: 1px solid #ecd8ff;
-  }
-  .badge-accepted {
-    background: #dafbe1;
-    color: #1a7f37;
-    border: 1px solid #aceebb;
-  }
-  .badge-rejected {
-    background: #ffebe9;
-    color: #cf222e;
-    border: 1px solid #ffcecb;
-  }
-  .badge-withdrawn {
-    background: #f6f8fa;
-    color: #57606a;
-    border: 1px solid #d0d7de;
-  }
-  .btn-detail {
-    padding: 5px 9px;
-    background: #0366d6;
-    color: white;
-    border-radius: 4px;
-    text-decoration: none;
-    font-size: 0.85em;
-    font-weight: 500;
-    display: inline-block;
-  }
-  .btn-detail:hover {
-    background: #0255b5;
-  }
-  .btn-edit {
-    padding: 5px 9px;
-    background: #f1a30b;
-    color: white;
-    border-radius: 4px;
-    text-decoration: none;
-    font-size: 0.85em;
-    font-weight: 500;
-    display: inline-block;
-    margin-left: 4px;
-  }
-  .btn-edit:hover {
-    background: #d98e04;
-  }
-  .btn-delete {
-    padding: 5px 9px;
-    background: #d73a49;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 0.85em;
-    font-weight: 500;
-    cursor: pointer;
-    display: inline-block;
-    margin-left: 4px;
-    transition: background 0.2s;
-  }
-  .btn-delete:hover {
-    background: #cb2431;
-  }
-  .detail-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 20px;
-  }
-  .detail-item {
-    background: #f8fafc;
-    padding: 12px 16px;
-    border-radius: 6px;
-    border: 1px solid #e2e8f0;
-  }
-  .detail-label {
-    font-size: 0.8em;
-    color: #64748b;
-    font-weight: 600;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-  }
-  .detail-value {
-    font-size: 1.05em;
-    color: #0f172a;
-    font-weight: 500;
-  }
-`;
+const { renderLayout, escapeHtml } = require('./layout');
 
+/**
+ * Başvuru durum rozeti HTML çıktısı
+ * @param {string} status 
+ * @returns {string}
+ */
 const getStatusBadge = (status) => {
   const s = (status || 'pending').toLowerCase();
-  let badgeClass = 'badge-pending';
+  let badgeClass = 'badge-warning';
   let label = 'Beklemede (pending)';
 
   if (s === 'reviewed') {
-    badgeClass = 'badge-reviewed';
+    badgeClass = 'badge-info';
     label = 'İncelendi (reviewed)';
   } else if (s === 'interview') {
-    badgeClass = 'badge-interview';
+    badgeClass = 'badge-dark';
     label = 'Mülakat (interview)';
   } else if (s === 'accepted') {
-    badgeClass = 'badge-accepted';
+    badgeClass = 'badge-success';
     label = 'Kabul Edildi (accepted)';
   } else if (s === 'rejected') {
-    badgeClass = 'badge-rejected';
+    badgeClass = 'badge-danger';
     label = 'Reddedildi (rejected)';
   } else if (s === 'withdrawn') {
-    badgeClass = 'badge-withdrawn';
+    badgeClass = 'badge-neutral';
     label = 'Geri Çekildi (withdrawn)';
   }
 
@@ -306,47 +53,53 @@ const renderApplicationsPage = (applications = [], options = {}, extraData = { j
 
   let alertBox = '';
   if (options.success) {
-    alertBox = `<div class="alert alert-success">✅ ${options.success}</div>`;
+    alertBox = `<div class="alert alert-success"><span>✅</span><div>${escapeHtml(options.success)}</div></div>`;
   } else if (options.error) {
-    alertBox = `<div class="alert alert-error">❌ ${options.error}</div>`;
+    alertBox = `<div class="alert alert-error"><span>❌</span><div>${escapeHtml(options.error)}</div></div>`;
   }
 
   const jobOptions = jobPostings
     .map(
       (j) =>
-        `<option value="${j.id}" ${selectedJobId === j.id ? 'selected' : ''}>#${j.id} - ${j.title} @ ${j.company}</option>`
+        `<option value="${escapeHtml(j.id)}" ${selectedJobId === j.id ? 'selected' : ''}>#${escapeHtml(j.id)} - ${escapeHtml(j.title)} @ ${escapeHtml(j.company)}</option>`
     )
     .join('');
 
   const userOptions = users
-    .map((u) => `<option value="${u.id}">${u.name} (${u.email})</option>`)
+    .map((u) => `<option value="${escapeHtml(u.id)}">${escapeHtml(u.name)} (${escapeHtml(u.email)})</option>`)
     .join('');
 
   const appRows = applications.length === 0
-    ? `<tr><td colspan="7" style="text-align: center; color: #777; padding: 25px;">Henüz kaydedilmiş başvuru bulunmuyor.</td></tr>`
+    ? `<tr><td colspan="7" class="empty-state"><div class="empty-state-icon">📄</div><h3>Henüz kayıtlı başvuru bulunmuyor</h3><p>Aşağıdaki formu kullanarak bir iş ilanına yeni bir mezun başvurusu kaydedebilirsiniz.</p></td></tr>`
     : applications
         .map(
           (app) => `
       <tr>
-        <td><strong>#${app.id}</strong></td>
+        <td><strong>#${escapeHtml(app.id)}</strong></td>
         <td>
-          <a href="/job-postings/${app.jobPostingId}" style="color: #0366d6; text-decoration: none; font-weight: 600;">İlan #${app.jobPostingId}</a>
-          <div style="font-size: 0.85em; color: #555;">${app.jobTitle ? `${app.jobTitle} @ ${app.company}` : ''}</div>
+          <a href="/job-postings/${escapeHtml(app.jobPostingId)}" style="font-weight: 700; color: #111827; text-decoration: none;">
+            İlan #${escapeHtml(app.jobPostingId)}
+          </a>
+          <div style="font-size: 13px; color: #4B5563; margin-top: 2px;">
+            ${app.jobTitle ? `${escapeHtml(app.jobTitle)} @ ${escapeHtml(app.company || '')}` : ''}
+          </div>
         </td>
         <td>
-          <a href="/users/${app.userId}" style="color: #0366d6; text-decoration: none; font-weight: 600;">${app.userName ? app.userName : `Mezun #${app.userId}`}</a>
-          <div style="font-size: 0.85em; color: #666;">${app.userEmail || ''}</div>
+          <a href="/users/${escapeHtml(app.userId)}" style="font-weight: 600; color: #111827;">
+            ${escapeHtml(app.userName || `Mezun #${app.userId}`)}
+          </a>
+          <div style="font-size: 12px; color: #6B7280;">${escapeHtml(app.userEmail || '')}</div>
         </td>
         <td>${getStatusBadge(app.status)}</td>
-        <td>${app.appliedAt ? app.appliedAt.substring(0, 10) : '-'}</td>
+        <td style="font-size: 13px; color: #6B7280;">${app.appliedAt ? escapeHtml(app.appliedAt.substring(0, 10)) : '-'}</td>
         <td>
-          ${app.resumeUrl ? `<a href="${app.resumeUrl}" target="_blank" style="color: #0366d6; font-size: 0.9em;">Özgeçmiş ↗</a>` : '<span style="color: #999;">Yok</span>'}
+          ${app.resumeUrl ? `<a href="${escapeHtml(app.resumeUrl)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Özgeçmiş ↗</a>` : '<span style="color: #9CA3AF; font-size: 13px;">Yok</span>'}
         </td>
-        <td style="white-space: nowrap;">
-          <a href="/applications/${app.id}" class="btn-detail" title="Başvuru Detayı">Gör</a>
-          <a href="/applications/${app.id}/edit" class="btn-edit" title="Başvuruyu Düzenle">Düzenle</a>
-          <form method="POST" action="/applications/${app.id}/delete" style="display: inline;" onsubmit="return confirm('#${app.id} numaralı başvuruyu silmek istediğinize emin misiniz?');">
-            <button type="submit" class="btn-delete" title="Başvuruyu Sil">Sil</button>
+        <td style="white-space: nowrap; text-align: right;">
+          <a href="/applications/${escapeHtml(app.id)}" class="btn btn-secondary btn-sm" title="Başvuru Detayı">Görüntüle</a>
+          <a href="/applications/${escapeHtml(app.id)}/edit" class="btn btn-outline btn-sm" style="color: #111827; border-color: #D1D5DB; margin-left: 4px;" title="Başvuruyu Düzenle">Düzenle</a>
+          <form method="POST" action="/applications/${escapeHtml(app.id)}/delete" style="display: inline; margin: 0;" onsubmit="return confirm('#${escapeHtml(app.id)} numaralı başvuruyu silmek istediğinize emin misiniz?');">
+            <button type="submit" class="btn btn-danger btn-sm" style="margin-left: 4px;" title="Başvuruyu Sil">Sil</button>
           </form>
         </td>
       </tr>
@@ -354,92 +107,101 @@ const renderApplicationsPage = (applications = [], options = {}, extraData = { j
         )
         .join('');
 
-  return `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>İş Başvuruları - Alumni Tracking System</title>
-  <style>${baseStyles}</style>
-</head>
-<body>
-  <div class="nav">
-    <a href="/">← Ana Sayfa</a>
-    <a href="/users">Mezunlar (Web)</a>
-    <a href="/announcements">Duyurular (Web)</a>
-    <a href="/job-postings">İş İlanları (Web)</a>
-    <a href="/applications"><strong>Başvurular (Web)</strong></a>
-    <a href="/api/applications" target="_blank">JSON API (/api/applications)</a>
-    <a href="/api/swagger" target="_blank">Swagger Dokümantasyonu</a>
-  </div>
+  const content = `
+    ${alertBox}
 
-  <h1>📄 İş Başvuruları (Job Applications)</h1>
-  <p>Alumni Tracking System kariyer başvuruları arayüzü. Mezunların iş ve staj ilanlarına yaptıkları başvuruları inceleyebilir, yeni başvuru ekleyebilir veya başvuru durumlarını yönetebilirsiniz.</p>
-
-  ${alertBox}
-
-  <!-- Yeni Başvuru Formu (POST /applications) -->
-  <div class="card">
-    <h3 style="margin-top: 0; margin-bottom: 15px;">➕ Yeni İş Başvurusu Yap / Kaydet</h3>
-    <form method="POST" action="/applications">
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="jobPostingId">Başvurulacak İş İlanı *</label>
-          <select id="jobPostingId" name="jobPostingId" required>
-            <option value="">-- İlan Seçiniz --</option>
-            ${jobOptions}
-          </select>
+    <!-- Başvurular Tablosu -->
+    <div class="card">
+      <div class="card-title">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span>📄 Kayıtlı İş ve Staj Başvuruları</span>
+          <span class="badge badge-dark">Toplam: ${applications.length}</span>
         </div>
-        <div class="form-group">
-          <label for="userId">Başvuran Mezun / Kullanıcı *</label>
-          <select id="userId" name="userId" required>
-            <option value="">-- Mezun Seçiniz --</option>
-            ${userOptions}
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="status">Başvuru Durumu</label>
-          <select id="status" name="status">
-            <option value="pending">Beklemede (pending)</option>
-            <option value="reviewed">İncelendi (reviewed)</option>
-            <option value="interview">Mülakat (interview)</option>
-            <option value="accepted">Kabul Edildi (accepted)</option>
-            <option value="rejected">Reddedildi (rejected)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="resumeUrl">Özgeçmiş / CV Bağlantısı (URL)</label>
-          <input type="url" id="resumeUrl" name="resumeUrl" placeholder="Örn: https://drive.google.com/cv.pdf">
-        </div>
-        <div class="form-group full-width">
-          <label for="coverNote">Ön Yazı / Motivasyon Notu</label>
-          <textarea id="coverNote" name="coverNote" rows="3" placeholder="Pozisyona uygunluk gerekçesi ve kısa tanıtım..."></textarea>
-        </div>
-        <button type="submit" class="btn-submit">🚀 Başvuruyu Gönder</button>
+        <a href="#new-application-form" class="btn btn-primary btn-sm">+ Yeni Başvuru Ekle</a>
       </div>
-    </form>
-  </div>
 
-  <!-- Başvurular Tablosu -->
-  <h2>📋 Kayıtlı Başvurular Listesi (${applications.length})</h2>
-  <table>
-    <thead>
-      <tr>
-        <th style="width: 50px;">ID</th>
-        <th>İş İlanı</th>
-        <th>Başvuran Mezun</th>
-        <th>Durum</th>
-        <th>Başvuru Tarihi</th>
-        <th>Özgeçmiş</th>
-        <th style="width: 140px;">İşlemler</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${appRows}
-    </tbody>
-  </table>
-</body>
-</html>`;
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 50px;">ID</th>
+              <th>İş / Staj İlanı</th>
+              <th>Başvuran Mezun</th>
+              <th>Durum</th>
+              <th>Başvuru Tarihi</th>
+              <th>Özgeçmiş</th>
+              <th style="width: 200px; text-align: right;">İşlemler</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${appRows}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Yeni Başvuru Formu (POST /applications) -->
+    <div class="card" id="new-application-form">
+      <div class="card-title">
+        <span>➕ Yeni İş Başvurusu Kaydet</span>
+        <span class="badge badge-warning">Başvuru Formu</span>
+      </div>
+      <p style="color: #4B5563; font-size: 14px; margin-bottom: 20px;">
+        Mezunlar adına açık ilanlara iş veya staj başvurusu oluşturun ve süreç durumunu başlatın.
+      </p>
+
+      <form method="POST" action="/applications">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="jobPostingId">Başvurulacak İş İlanı *</label>
+            <select id="jobPostingId" name="jobPostingId" required>
+              <option value="">-- İlan Seçiniz --</option>
+              ${jobOptions}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="userId">Başvuran Mezun / Kullanıcı *</label>
+            <select id="userId" name="userId" required>
+              <option value="">-- Mezun Seçiniz --</option>
+              ${userOptions}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="status">Başlangıç Durumu</label>
+            <select id="status" name="status">
+              <option value="pending">Beklemede (pending)</option>
+              <option value="reviewed">İncelendi (reviewed)</option>
+              <option value="interview">Mülakat (interview)</option>
+              <option value="accepted">Kabul Edildi (accepted)</option>
+              <option value="rejected">Reddedildi (rejected)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="resumeUrl">Özgeçmiş / CV Bağlantısı (URL)</label>
+            <input type="url" id="resumeUrl" name="resumeUrl" placeholder="Örn: https://linkedin.com/in/... veya https://drive.google.com/...">
+          </div>
+          <div class="form-group full-width">
+            <label for="coverNote">Ön Yazı / Başvuru Notu</label>
+            <textarea id="coverNote" name="coverNote" rows="3" placeholder="Pozisyona uygunluk, motivasyon ve adayın ek açıklamaları..."></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">🚀 Başvuruyu Kaydet</button>
+            <a href="/applications" class="btn btn-secondary">Temizle</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  `;
+
+  return renderLayout({
+    title: 'İş Başvuruları | İstanbul Üniversitesi Mezun Bilgi Sistemi',
+    activeNav: 'applications',
+    pageTitle: '📄 İş ve Staj Başvuruları',
+    pageSubtitle: 'Mezunların kariyer fırsatlarına yaptığı başvuruları izleyin ve süreç adımlarını güncelleyin.',
+    breadcrumbsHtml: '<a href="/">Ana Sayfa</a> <span class="separator">/</span> <span class="current">Başvurular</span>',
+    content,
+  });
 };
 
 /**
@@ -452,87 +214,78 @@ const renderApplicationDetailPage = (app, extraData = { jobPosting: null, user: 
   const job = extraData.jobPosting;
   const user = extraData.user;
 
-  return `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Başvuru #${app.id} Detayı - Alumni Tracking System</title>
-  <style>${baseStyles}</style>
-</head>
-<body>
-  <div class="nav">
-    <a href="/applications">← Başvurular Listesi</a>
-    <a href="/job-postings">İş İlanları</a>
-    <a href="/users">Mezunlar</a>
-  </div>
-
-  <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
-      <div>
-        <h1 style="border: none; margin-bottom: 5px;">Başvuru #${app.id}</h1>
-        <h3 style="color: #4a5568; margin-top: 0;">📅 ${app.appliedAt ? app.appliedAt.substring(0, 10) : '-'}</h3>
-      </div>
-      <div>
-        ${getStatusBadge(app.status)}
-      </div>
-    </div>
-
-    <div class="detail-grid">
-      <div class="detail-item">
-        <div class="detail-label">Başvurulan İlan</div>
-        <div class="detail-value">
-          ${job ? `<a href="/job-postings/${job.id}">💼 ${job.title} @ ${job.company}</a>` : `İlan #${app.jobPostingId}`}
+  const content = `
+    <div class="card" style="max-width: 860px; margin: 0 auto;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; padding-bottom: 20px; border-bottom: 1.5px solid #E5E7EB; margin-bottom: 24px;">
+        <div>
+          <div style="font-size: 13px; color: #6B7280; font-weight: 700; text-transform: uppercase;">Başvuru #${escapeHtml(app.id)}</div>
+          <h1 style="font-size: 24px; font-weight: 700; color: #111827; margin: 4px 0;">
+            ${job ? `${escapeHtml(job.title)} @ ${escapeHtml(job.company)}` : `İlan #${escapeHtml(app.jobPostingId)}`}
+          </h1>
+          <div style="font-size: 14px; color: #4B5563;">
+            Tarih: ${app.appliedAt ? escapeHtml(app.appliedAt.substring(0, 10)) : '-'}
+          </div>
+        </div>
+        <div>
+          ${getStatusBadge(app.status)}
         </div>
       </div>
-      <div class="detail-item">
-        <div class="detail-label">Başvuran Mezun</div>
-        <div class="detail-value">
-          ${user ? `<a href="/users/${user.id}">🎓 ${user.name} (${user.email})</a>` : `Kullanıcı #${app.userId}`}
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+        <div style="background-color: #F9FAFB; padding: 14px 18px; border-radius: 12px; border: 1px solid #E5E7EB;">
+          <div style="font-size: 12px; color: #6B7280; font-weight: 700; text-transform: uppercase;">Başvurulan İlan</div>
+          <div style="font-size: 15px; font-weight: 600; color: #111827; margin-top: 4px;">
+            ${job ? `<a href="/job-postings/${escapeHtml(job.id)}" style="color: #111827; text-decoration: underline;">💼 ${escapeHtml(job.title)} (@${escapeHtml(job.company)})</a>` : `İlan #${escapeHtml(app.jobPostingId)}`}
+          </div>
+        </div>
+
+        <div style="background-color: #F9FAFB; padding: 14px 18px; border-radius: 12px; border: 1px solid #E5E7EB;">
+          <div style="font-size: 12px; color: #6B7280; font-weight: 700; text-transform: uppercase;">Başvuran Mezun</div>
+          <div style="font-size: 15px; font-weight: 600; color: #111827; margin-top: 4px;">
+            ${user ? `<a href="/users/${escapeHtml(user.id)}" style="color: #111827; text-decoration: underline;">🎓 ${escapeHtml(user.name)} (${escapeHtml(user.email)})</a>` : `Kullanıcı #${escapeHtml(app.userId)}`}
+          </div>
+        </div>
+
+        <div style="background-color: #F9FAFB; padding: 14px 18px; border-radius: 12px; border: 1px solid #E5E7EB;">
+          <div style="font-size: 12px; color: #6B7280; font-weight: 700; text-transform: uppercase;">Özgeçmiş / CV</div>
+          <div style="font-size: 14px; font-weight: 600; margin-top: 4px;">
+            ${app.resumeUrl ? `<a href="${escapeHtml(app.resumeUrl)}" target="_blank" rel="noopener" style="color: #111827; text-decoration: underline;">📄 Özgeçmişi Görüntüle ↗</a>` : 'Özgeçmiş yüklenmemiş'}
+          </div>
+        </div>
+
+        <div style="background-color: #F9FAFB; padding: 14px 18px; border-radius: 12px; border: 1px solid #E5E7EB;">
+          <div style="font-size: 12px; color: #6B7280; font-weight: 700; text-transform: uppercase;">Son Güncelleme</div>
+          <div style="font-size: 14px; color: #374151; margin-top: 4px;">
+            🕒 ${app.updatedAt ? escapeHtml(app.updatedAt.substring(0, 10)) : 'Güncellenmedi'}
+          </div>
         </div>
       </div>
-      <div class="detail-item">
-        <div class="detail-label">Özgeçmiş / CV</div>
-        <div class="detail-value">
-          ${app.resumeUrl ? `<a href="${app.resumeUrl}" target="_blank">📄 Özgeçmişi Görüntüle ↗</a>` : 'Özgeçmiş yüklenmemiş'}
+
+      <div style="margin-bottom: 28px;">
+        <h3 style="font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 10px;">📝 Ön Yazı / Motivasyon Notu</h3>
+        <div style="background-color: #FAFAFA; padding: 18px; border-radius: 12px; border: 1px solid #E5E7EB; line-height: 1.7; color: #374151; white-space: pre-line;">
+${escapeHtml(app.coverNote || 'Ön yazı eklenmemiş.')}
         </div>
       </div>
-      <div class="detail-item">
-        <div class="detail-label">Son Güncellenme</div>
-        <div class="detail-value">
-          🕒 ${app.updatedAt ? app.updatedAt.substring(0, 10) : 'Güncellenmedi'}
-        </div>
+
+      <div style="display: flex; gap: 12px; align-items: center; border-top: 1.5px solid #E5E7EB; padding-top: 20px; flex-wrap: wrap;">
+        <a href="/applications" class="btn btn-secondary">← Başvurular Listesi</a>
+        <a href="/applications/${escapeHtml(app.id)}/edit" class="btn btn-primary">✏️ Durumu Güncelle</a>
+        <form method="POST" action="/applications/${escapeHtml(app.id)}/delete" style="display: inline; margin-left: auto;" onsubmit="return confirm('#${escapeHtml(app.id)} numaralı başvuruyu silmek istediğinize emin misiniz?');">
+          <button type="submit" class="btn btn-danger">🗑️ Başvuruyu Sil</button>
+        </form>
       </div>
     </div>
+  `;
 
-    ${user ? `
-    <h3>👤 Aday Mezun Bilgileri</h3>
-    <div class="detail-grid">
-      <div class="detail-item">
-        <div class="detail-label">Bölüm</div>
-        <div class="detail-value">${user.department || 'Belirtilmedi'}</div>
-      </div>
-      <div class="detail-item">
-        <div class="detail-label">Mezuniyet Yılı</div>
-        <div class="detail-value">${user.graduationYear || 'Belirtilmedi'}</div>
-      </div>
-    </div>` : ''}
-
-    <h3>📝 Ön Yazı / Başvuru Notu</h3>
-    <div style="background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; white-space: pre-line; margin-bottom: 20px;">
-      ${app.coverNote || 'Ön yazı eklenmemiş.'}
-    </div>
-
-    <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #eaecef; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-      <a href="/applications/${app.id}/edit" class="btn-edit" style="padding: 8px 16px; font-size: 0.95em;">✏️ Durumu / Başvuruyu Düzenle</a>
-      <form method="POST" action="/applications/${app.id}/delete" style="display: inline;" onsubmit="return confirm('#${app.id} numaralı başvuruyu silmek istediğinize emin misiniz?');">
-        <button type="submit" class="btn-delete" style="padding: 8px 16px; font-size: 0.95em;">🗑️ Başvuruyu Sil</button>
-      </form>
-      <a href="/applications" class="btn-secondary" style="margin-left: auto;">Başvurular Listesine Dön</a>
-    </div>
-  </div>
-</body>
-</html>`;
+  return renderLayout({
+    title: `Başvuru #${escapeHtml(app.id)} Detayı | İÜ Mezun`,
+    activeNav: 'applications',
+    pageTitle: `Başvuru #${escapeHtml(app.id)} Detayı`,
+    pageSubtitle: 'İş başvurusu inceleme ve durum değerlendirme kartı.',
+    breadcrumbsHtml: `<a href="/">Ana Sayfa</a> <span class="separator">/</span> <a href="/applications">Başvurular</a> <span class="separator">/</span> <span class="current">#${escapeHtml(app.id)}</span>`,
+    content,
+  });
 };
 
 /**
@@ -548,63 +301,61 @@ const renderEditApplicationPage = (app, options = {}, extraData = { jobPosting: 
 
   let alertBox = '';
   if (options.error) {
-    alertBox = `<div class="alert alert-error">❌ ${options.error}</div>`;
+    alertBox = `<div class="alert alert-error"><span>❌</span><div>${escapeHtml(options.error)}</div></div>`;
   }
 
-  return `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Başvuru Düzenle: #${app.id} - Alumni Tracking System</title>
-  <style>${baseStyles}</style>
-</head>
-<body>
-  <div class="nav">
-    <a href="/applications">← Başvurular Listesi</a>
-    <a href="/applications/${app.id}">Başvuru Detayı</a>
-  </div>
+  const content = `
+    ${alertBox}
 
-  <h1>✏️ Başvuru Düzenle (#${app.id})</h1>
-  ${alertBox}
-
-  <div class="card">
-    <p style="margin-top: 0; color: #555;">
-      <strong>İlan:</strong> ${job ? `${job.title} @ ${job.company}` : `İlan #${app.jobPostingId}`} | 
-      <strong>Aday:</strong> ${user ? `${user.name} (${user.email})` : `Kullanıcı #${app.userId}`}
-    </p>
-
-    <form method="POST" action="/applications/${app.id}/update">
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="status">Başvuru Durumu *</label>
-          <select id="status" name="status" required>
-            <option value="pending" ${app.status === 'pending' ? 'selected' : ''}>Beklemede (pending)</option>
-            <option value="reviewed" ${app.status === 'reviewed' ? 'selected' : ''}>İncelendi (reviewed)</option>
-            <option value="interview" ${app.status === 'interview' ? 'selected' : ''}>Mülakat (interview)</option>
-            <option value="accepted" ${app.status === 'accepted' ? 'selected' : ''}>Kabul Edildi (accepted)</option>
-            <option value="rejected" ${app.status === 'rejected' ? 'selected' : ''}>Reddedildi (rejected)</option>
-            <option value="withdrawn" ${app.status === 'withdrawn' ? 'selected' : ''}>Geri Çekildi (withdrawn)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="resumeUrl">Özgeçmiş / CV Bağlantısı</label>
-          <input type="url" id="resumeUrl" name="resumeUrl" value="${app.resumeUrl || ''}">
-        </div>
-        <div class="form-group full-width">
-          <label for="coverNote">Ön Yazı / Başvuru Notu</label>
-          <textarea id="coverNote" name="coverNote" rows="4">${app.coverNote || ''}</textarea>
-        </div>
-
-        <div style="grid-column: 1 / -1; display: flex; gap: 10px; margin-top: 10px;">
-          <button type="submit" class="btn-submit" style="flex: 1;">💾 Güncellemeyi Kaydet</button>
-          <a href="/applications/${app.id}" class="btn-secondary" style="flex: 0 0 auto; display: flex; align-items: center;">İptal</a>
-        </div>
+    <div class="card" style="max-width: 800px; margin: 0 auto;">
+      <div class="card-title">
+        <span>✏️ Başvuru Durumunu Güncelle</span>
+        <span class="badge badge-warning">Başvuru ID: #${escapeHtml(app.id)}</span>
       </div>
-    </form>
-  </div>
-</body>
-</html>`;
+      <p style="color: #4B5563; font-size: 14px; margin-bottom: 20px;">
+        <strong>İlan:</strong> ${job ? `${escapeHtml(job.title)} @ ${escapeHtml(job.company)}` : `İlan #${escapeHtml(app.jobPostingId)}`} &bull; 
+        <strong>Aday:</strong> ${user ? `${escapeHtml(user.name)} (${escapeHtml(user.email)})` : `Kullanıcı #${escapeHtml(app.userId)}`}
+      </p>
+
+      <form method="POST" action="/applications/${escapeHtml(app.id)}/update">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="status">Başvuru Durumu *</label>
+            <select id="status" name="status" required>
+              <option value="pending" ${app.status === 'pending' ? 'selected' : ''}>Beklemede (pending)</option>
+              <option value="reviewed" ${app.status === 'reviewed' ? 'selected' : ''}>İncelendi (reviewed)</option>
+              <option value="interview" ${app.status === 'interview' ? 'selected' : ''}>Mülakat (interview)</option>
+              <option value="accepted" ${app.status === 'accepted' ? 'selected' : ''}>Kabul Edildi (accepted)</option>
+              <option value="rejected" ${app.status === 'rejected' ? 'selected' : ''}>Reddedildi (rejected)</option>
+              <option value="withdrawn" ${app.status === 'withdrawn' ? 'selected' : ''}>Geri Çekildi (withdrawn)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="resumeUrl">Özgeçmiş / CV Bağlantısı</label>
+            <input type="url" id="resumeUrl" name="resumeUrl" value="${escapeHtml(app.resumeUrl || '')}">
+          </div>
+          <div class="form-group full-width">
+            <label for="coverNote">Ön Yazı / Başvuru Notu</label>
+            <textarea id="coverNote" name="coverNote" rows="4">${escapeHtml(app.coverNote || '')}</textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 Değişiklikleri Kaydet</button>
+            <a href="/applications/${escapeHtml(app.id)}" class="btn btn-secondary">İptal</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  `;
+
+  return renderLayout({
+    title: `Başvuru #${escapeHtml(app.id)} Düzenle | İÜ Mezun`,
+    activeNav: 'applications',
+    pageTitle: `✏️ Başvuru Düzenle (#${escapeHtml(app.id)})`,
+    pageSubtitle: 'Başvuru değerlendirme aşamasını ve notlarını güncelleyin.',
+    breadcrumbsHtml: `<a href="/">Ana Sayfa</a> <span class="separator">/</span> <a href="/applications">Başvurular</a> <span class="separator">/</span> <span class="current">Düzenle</span>`,
+    content,
+  });
 };
 
 /**
@@ -613,25 +364,27 @@ const renderEditApplicationPage = (app, options = {}, extraData = { jobPosting: 
  * @returns {string} Tam HTML çıktısı
  */
 const renderApplicationNotFoundPage = (id) => {
-  return `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Başvuru Bulunamadı - 404</title>
-  <style>${baseStyles}</style>
-</head>
-<body>
-  <div class="nav">
-    <a href="/applications">← Başvurular Listesi</a>
-  </div>
-  <div class="card" style="text-align: center; padding: 40px 20px;">
-    <h2>❌ Başvuru Bulunamadı (404)</h2>
-    <p>Aradığınız <strong>#${id}</strong> numaralı iş başvurusu sistemde mevcut değil.</p>
-    <a href="/applications" class="btn-detail" style="display: inline-block; margin-top: 15px; padding: 8px 16px;">Başvurular Listesine Dön</a>
-  </div>
-</body>
-</html>`;
+  const content = `
+    <div class="card" style="max-width: 680px; margin: 40px auto; text-align: center; padding: 48px 24px;">
+      <div style="font-size: 52px; margin-bottom: 12px;">📄 ❌</div>
+      <span class="badge badge-danger" style="margin-bottom: 14px;">404 BULUNAMADI</span>
+      <h2 style="font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 8px;">Başvuru Bulunamadı</h2>
+      <p style="color: #4B5563; font-size: 15px; margin-bottom: 24px;">
+        Aradığınız <strong>#${escapeHtml(id)}</strong> numaralı iş başvurusu sistemde mevcut değil veya silinmiş.
+      </p>
+      <div style="display: flex; justify-content: center; gap: 12px;">
+        <a href="/applications" class="btn btn-primary">← Başvurular Listesine Dön</a>
+        <a href="/" class="btn btn-secondary">Ana Sayfa</a>
+      </div>
+    </div>
+  `;
+
+  return renderLayout({
+    title: 'Başvuru Bulunamadı (404) | İÜ Mezun',
+    activeNav: 'applications',
+    breadcrumbsHtml: '<a href="/">Ana Sayfa</a> <span class="separator">/</span> <a href="/applications">Başvurular</a> <span class="separator">/</span> <span class="current">Başvuru Bulunamadı</span>',
+    content,
+  });
 };
 
 module.exports = {

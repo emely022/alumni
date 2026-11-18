@@ -1,225 +1,13 @@
 /**
- * User View (Görünüm Katmanı)
+ * User View (Görünüm Katmanı) - İstanbul Üniversitesi Mezun Bilgi Sistemi
  * 
- * MVC mimarisinin View katmanıdır.
- * Mezunlar listesi, mezun oluşturma formu, düzenleme formu
- * ve profil detayları için gerekli HTML şablonlarını oluşturmaktan sorumludur.
+ * design.md tasarım sistemine uygun:
+ * - Koyu yeşil zemin: #214539
+ * - Header, Menü, Logo, Footer
+ * - Beyaz kartlar, sarı butonlar ve Arial tipografi
  */
 
-const baseStyles = `
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    max-width: 900px;
-    margin: 40px auto;
-    padding: 0 20px;
-    line-height: 1.6;
-    color: #333;
-    background-color: #fcfcfc;
-  }
-  h1, h2, h3 {
-    color: #2c3e50;
-  }
-  h1 {
-    border-bottom: 2px solid #eaecef;
-    padding-bottom: 10px;
-    margin-top: 10px;
-  }
-  .nav {
-    margin-bottom: 25px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #eaecef;
-  }
-  .nav a {
-    color: #0366d6;
-    text-decoration: none;
-    margin-right: 18px;
-    font-weight: 500;
-  }
-  .nav a:hover {
-    text-decoration: underline;
-  }
-  .alert {
-    padding: 12px 18px;
-    border-radius: 6px;
-    margin-bottom: 20px;
-    font-size: 0.95em;
-  }
-  .alert-success {
-    background-color: #e6ffed;
-    border: 1px solid #acf2bd;
-    color: #155724;
-  }
-  .alert-error {
-    background-color: #ffeef0;
-    border: 1px solid #fdaeb7;
-    color: #86181d;
-  }
-  .card {
-    background: white;
-    padding: 20px 24px;
-    border-radius: 8px;
-    border: 1px solid #e1e4e8;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    margin-bottom: 30px;
-  }
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-  @media (max-width: 600px) {
-    .form-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-  .form-group {
-    display: flex;
-    flex-direction: column;
-  }
-  .form-group label {
-    font-weight: 600;
-    margin-bottom: 6px;
-    font-size: 0.9em;
-    color: #444;
-  }
-  .form-group input {
-    padding: 9px 12px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 0.95em;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .form-group input:focus {
-    border-color: #0366d6;
-    box-shadow: 0 0 0 3px rgba(3, 102, 214, 0.15);
-  }
-  .btn-submit {
-    grid-column: 1 / -1;
-    background-color: #2ea44f;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 1em;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    margin-top: 8px;
-  }
-  .btn-submit:hover {
-    background-color: #2c974b;
-  }
-  .btn-secondary {
-    padding: 10px 20px;
-    background: #e1e4e8;
-    color: #24292e;
-    border-radius: 6px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.95em;
-    display: inline-block;
-    text-align: center;
-    transition: background-color 0.2s;
-  }
-  .btn-secondary:hover {
-    background: #d1d5da;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-    background: white;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid #e1e4e8;
-  }
-  th {
-    background-color: #f6f8fa;
-    color: #24292e;
-    text-align: left;
-    padding: 12px 14px;
-    border-bottom: 2px solid #eaecef;
-    font-weight: 600;
-    font-size: 0.9em;
-  }
-  td {
-    padding: 12px 14px;
-    border-bottom: 1px solid #eaecef;
-    font-size: 0.95em;
-  }
-  tr:last-child td {
-    border-bottom: none;
-  }
-  tr:hover {
-    background-color: #fcfcfc;
-  }
-  .badge {
-    display: inline-block;
-    padding: 3px 8px;
-    border-radius: 12px;
-    font-size: 0.85em;
-    background: #e1f5fe;
-    color: #0288d1;
-    font-weight: 600;
-  }
-  .btn-detail {
-    padding: 5px 9px;
-    background: #0366d6;
-    color: white;
-    border-radius: 4px;
-    text-decoration: none;
-    font-size: 0.85em;
-    font-weight: 500;
-    display: inline-block;
-  }
-  .btn-detail:hover {
-    background: #0255b5;
-  }
-  .btn-edit {
-    padding: 5px 9px;
-    background: #f1a30b;
-    color: white;
-    border-radius: 4px;
-    text-decoration: none;
-    font-size: 0.85em;
-    font-weight: 500;
-    display: inline-block;
-    margin-left: 4px;
-  }
-  .btn-edit:hover {
-    background: #d98e04;
-  }
-  .btn-delete {
-    padding: 5px 9px;
-    background: #d73a49;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 0.85em;
-    font-weight: 500;
-    cursor: pointer;
-    display: inline-block;
-    margin-left: 4px;
-    transition: background 0.2s;
-  }
-  .btn-delete:hover {
-    background: #cb2431;
-  }
-  .btn-back {
-    display: inline-block;
-    padding: 8px 16px;
-    background: #0366d6;
-    color: white;
-    text-decoration: none;
-    border-radius: 6px;
-    font-weight: 500;
-  }
-  .btn-back:hover {
-    background: #0255b5;
-  }
-`;
+const { renderLayout, escapeHtml } = require('./layout');
 
 /**
  * Mezunlar Listesi ve Yeni Mezun Ekleme Formu Sayfası (GET /users)
@@ -232,27 +20,31 @@ const renderUsersPage = (users = [], options = {}) => {
 
   let alertBox = '';
   if (options.success) {
-    alertBox = `<div class="alert alert-success">✅ ${options.success}</div>`;
+    alertBox = `<div class="alert alert-success"><span>✅</span><div>${escapeHtml(options.success)}</div></div>`;
   } else if (options.error) {
-    alertBox = `<div class="alert alert-error">❌ ${options.error}</div>`;
+    alertBox = `<div class="alert alert-error"><span>❌</span><div>${escapeHtml(options.error)}</div></div>`;
   }
 
   const userRows = users.length === 0
-    ? `<tr><td colspan="6" style="text-align: center; color: #777; padding: 25px;">Henüz kayıtlı mezun bulunmuyor.</td></tr>`
+    ? `<tr><td colspan="6" class="empty-state"><div class="empty-state-icon">🎓</div><h3>Henüz kayıtlı mezun bulunmuyor</h3><p>Aşağıdaki formu doldurarak ilk mezun kaydını sisteme ekleyebilirsiniz.</p></td></tr>`
     : users
         .map(
           (u) => `
       <tr>
-        <td><strong>#${u.id}</strong></td>
-        <td><a href="/users/${u.id}" style="color: #0366d6; text-decoration: none; font-weight: 600;">${u.name}</a></td>
-        <td>${u.email}</td>
-        <td>${u.department || 'Belirtilmedi'}</td>
-        <td>${u.graduationYear || '-'}</td>
-        <td style="white-space: nowrap;">
-          <a href="/users/${u.id}" class="btn-detail" title="Profili Görüntüle">Gör</a>
-          <a href="/users/${u.id}/edit" class="btn-edit" title="Mezunu Düzenle">Düzenle</a>
-          <form method="POST" action="/users/${u.id}/delete" style="display: inline;" onsubmit="return confirm('${u.name} mezun kaydını silmek istediğinize emin misiniz?');">
-            <button type="submit" class="btn-delete" title="Mezunu Sil">Sil</button>
+        <td><strong>#${escapeHtml(u.id)}</strong></td>
+        <td>
+          <a href="/users/${escapeHtml(u.id)}" style="font-weight: 700; color: #111827; text-decoration: none;">
+            ${escapeHtml(u.name)}
+          </a>
+        </td>
+        <td><a href="mailto:${escapeHtml(u.email)}" style="color: #4B5563;">${escapeHtml(u.email)}</a></td>
+        <td><span class="badge badge-neutral">${escapeHtml(u.department || 'Belirtilmedi')}</span></td>
+        <td><strong>${escapeHtml(u.graduationYear || '-')}</strong></td>
+        <td style="white-space: nowrap; text-align: right;">
+          <a href="/users/${escapeHtml(u.id)}" class="btn btn-secondary btn-sm" title="Profili Görüntüle">Görüntüle</a>
+          <a href="/users/${escapeHtml(u.id)}/edit" class="btn btn-outline btn-sm" style="color: #111827; border-color: #D1D5DB; margin-left: 4px;" title="Mezunu Düzenle">Düzenle</a>
+          <form method="POST" action="/users/${escapeHtml(u.id)}/delete" style="display: inline; margin: 0;" onsubmit="return confirm('${escapeHtml(u.name)} mezun kaydını silmek istediğinize emin misiniz?');">
+            <button type="submit" class="btn btn-danger btn-sm" style="margin-left: 4px;" title="Mezunu Sil">Sil</button>
           </form>
         </td>
       </tr>
@@ -260,84 +52,88 @@ const renderUsersPage = (users = [], options = {}) => {
         )
         .join('');
 
-  return `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mezunlar Dizini - Alumni Tracking System</title>
-  <style>${baseStyles}</style>
-</head>
-<body>
-  <div class="nav">
-    <a href="/">← Ana Sayfa</a>
-    <a href="/about">Hakkında</a>
-    <a href="/users"><strong>Mezunlar Listesi (Web)</strong></a>
-    <a href="/announcements">Duyurular (Web)</a>
-    <a href="/job-postings">İş İlanları (Web)</a>
-    <a href="/applications">Başvurular (Web)</a>
-    <a href="/api/users" target="_blank">JSON API (/api/users)</a>
-    <a href="/api/swagger" target="_blank">Swagger Dokümantasyonu</a>
-  </div>
+  const content = `
+    ${alertBox}
 
-  <h1>🎓 Mezunlar Dizini (Alumni Directory)</h1>
-  <p>Alumni Tracking System web görünüm katmanı (View). Aşağıdaki formu kullanarak yeni mezun ekleyebilir, mevcut mezunları inceleyebilir, düzenleyebilir veya silebilirsiniz.</p>
-
-  ${alertBox}
-
-  <!-- Yeni Mezun Ekleme Formu (POST /users) -->
-  <div class="card">
-    <h3 style="margin-top: 0; margin-bottom: 15px;">➕ Yeni Mezun Ekle</h3>
-    <form method="POST" action="/users">
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="name">Ad Soyad *</label>
-          <input type="text" id="name" name="name" required placeholder="Örn: Zeynep Çelik">
+    <!-- Kayıtlı Mezunlar Tablosu -->
+    <div class="card">
+      <div class="card-title">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span>📋 Kayıtlı Mezunlar Listesi</span>
+          <span class="badge badge-dark">Toplam: ${users.length}</span>
         </div>
-        <div class="form-group">
-          <label for="email">E-Posta *</label>
-          <input type="email" id="email" name="email" required placeholder="Örn: zeynep@alumni.edu">
-        </div>
-        <div class="form-group">
-          <label for="department">Bölüm</label>
-          <input type="text" id="department" name="department" placeholder="Örn: Bilgisayar Mühendisliği">
-        </div>
-        <div class="form-group">
-          <label for="graduationYear">Mezuniyet Yılı</label>
-          <input type="number" id="graduationYear" name="graduationYear" value="${currentYear}" min="1950" max="2050">
-        </div>
-        <button type="submit" class="btn-submit">💾 Mezun Kaydet</button>
+        <a href="#new-user-form" class="btn btn-primary btn-sm">+ Yeni Mezun Ekle</a>
       </div>
-    </form>
-  </div>
 
-  <!-- Kayıtlı Mezunlar Tablosu -->
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-    <h3 style="margin: 0;">📋 Kayıtlı Mezunlar</h3>
-    <span class="badge">Toplam: ${users.length} Mezun</span>
-  </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 60px;">ID</th>
+              <th>Ad Soyad</th>
+              <th>E-Posta</th>
+              <th>Fakülte / Bölüm</th>
+              <th>Mezuniyet Yılı</th>
+              <th style="width: 200px; text-align: right;">İşlemler</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${userRows}
+          </tbody>
+        </table>
+      </div>
+    </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th style="width: 50px;">ID</th>
-        <th>Ad Soyad</th>
-        <th>E-Posta</th>
-        <th>Bölüm</th>
-        <th>Mezuniyet Yılı</th>
-        <th style="width: 170px;">İşlemler</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${userRows}
-    </tbody>
-  </table>
+    <!-- Yeni Mezun Ekleme Formu (POST /users) -->
+    <div class="card" id="new-user-form">
+      <div class="card-title">
+        <span>➕ Sisteme Yeni Mezun Kaydı Ekle</span>
+        <span class="badge badge-warning">Hızlı Form</span>
+      </div>
+      <p style="color: #4B5563; font-size: 14px; margin-bottom: 20px;">
+        İstanbul Üniversitesi mezunlar ağına yeni bir mezun kaydetmek için lütfen aşağıdaki zorunlu alanları doldurunuz.
+      </p>
 
-  <div style="margin-top: 30px; font-size: 0.85em; color: #666; text-align: center;">
-    Alumni Tracking System • MVC View Katmanı (<code>backend/src/views/userView.js</code>)
-  </div>
-</body>
-</html>`;
+      <form method="POST" action="/users">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="name">Ad Soyad *</label>
+            <input type="text" id="name" name="name" required placeholder="Örn: Zeynep Kaya">
+            <span class="form-help">Mezunun tam adı ve unvanı</span>
+          </div>
+          <div class="form-group">
+            <label for="email">E-Posta Adresi *</label>
+            <input type="email" id="email" name="email" required placeholder="Örn: zeynep.kaya@alumni.istanbul.edu.tr">
+            <span class="form-help">Sistem ve iletişim e-posta adresi</span>
+          </div>
+          <div class="form-group">
+            <label for="department">Fakülte / Bölüm</label>
+            <input type="text" id="department" name="department" placeholder="Örn: Hukuk Fakültesi">
+            <span class="form-help">Mezun olunan akademik birim</span>
+          </div>
+          <div class="form-group">
+            <label for="graduationYear">Mezuniyet Yılı</label>
+            <input type="number" id="graduationYear" name="graduationYear" value="${currentYear}" min="1950" max="2050">
+            <span class="form-help">Diploma / mezuniyet dönemi</span>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 Mezun Kaydını Tamamla</button>
+            <a href="/users" class="btn btn-secondary">Temizle</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  `;
+
+  return renderLayout({
+    title: 'Mezunlar Dizini | İstanbul Üniversitesi Mezun Bilgi Sistemi',
+    activeNav: 'users',
+    pageTitle: '🎓 Mezunlar Dizini (Alumni Directory)',
+    pageSubtitle: 'İstanbul Üniversitesi mezunlarını görüntüleyin, fakültelere göre arayın veya yeni mezun ekleyin.',
+    breadcrumbsHtml: '<a href="/">Ana Sayfa</a> <span class="separator">/</span> <span class="current">Mezunlar</span>',
+    content,
+  });
 };
 
 /**
@@ -349,61 +145,57 @@ const renderUsersPage = (users = [], options = {}) => {
 const renderEditUserPage = (user, options = {}) => {
   let alertBox = '';
   if (options.error) {
-    alertBox = `<div class="alert alert-error">❌ ${options.error}</div>`;
+    alertBox = `<div class="alert alert-error"><span>❌</span><div>${escapeHtml(options.error)}</div></div>`;
   }
 
-  return `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${user.name} - Mezun Bilgilerini Düzenle</title>
-  <style>${baseStyles}</style>
-</head>
-<body>
-  <div class="nav">
-    <a href="/">← Ana Sayfa</a>
-    <a href="/users">← Mezunlar Listesi</a>
-    <a href="/users/${user.id}">Profili Gör</a>
-  </div>
+  const content = `
+    ${alertBox}
 
-  <h1>✏️ Mezun Bilgilerini Düzenle</h1>
-  <p><strong>#${user.id}</strong> numaralı <strong>${user.name}</strong> mezun kaydının bilgilerini güncelliyorsunuz.</p>
-
-  ${alertBox}
-
-  <div class="card">
-    <form method="POST" action="/users/${user.id}/update">
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="name">Ad Soyad *</label>
-          <input type="text" id="name" name="name" value="${user.name}" required>
-        </div>
-        <div class="form-group">
-          <label for="email">E-Posta *</label>
-          <input type="email" id="email" name="email" value="${user.email}" required>
-        </div>
-        <div class="form-group">
-          <label for="department">Bölüm</label>
-          <input type="text" id="department" name="department" value="${user.department || ''}">
-        </div>
-        <div class="form-group">
-          <label for="graduationYear">Mezuniyet Yılı</label>
-          <input type="number" id="graduationYear" name="graduationYear" value="${user.graduationYear || ''}" min="1950" max="2050">
-        </div>
-        <div style="grid-column: 1 / -1; display: flex; gap: 12px; margin-top: 10px;">
-          <button type="submit" class="btn-submit" style="margin-top: 0; flex: 1;">💾 Değişiklikleri Kaydet</button>
-          <a href="/users" class="btn-secondary">İptal</a>
-        </div>
+    <div class="card" style="max-width: 800px; margin: 0 auto;">
+      <div class="card-title">
+        <span>✏️ Mezun Bilgilerini Güncelle</span>
+        <span class="badge badge-warning">Mezun ID: #${escapeHtml(user.id)}</span>
       </div>
-    </form>
-  </div>
+      <p style="color: #4B5563; font-size: 14px; margin-bottom: 24px;">
+        <strong>${escapeHtml(user.name)}</strong> adlı mezunun sistemdeki profil ve akademik bilgilerini güncelliyorsunuz.
+      </p>
 
-  <div style="margin-top: 30px; font-size: 0.85em; color: #666; text-align: center;">
-    Alumni Tracking System • Düzenleme Formu (<code>POST /users/${user.id}/update</code>)
-  </div>
-</body>
-</html>`;
+      <form method="POST" action="/users/${escapeHtml(user.id)}/update">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="name">Ad Soyad *</label>
+            <input type="text" id="name" name="name" value="${escapeHtml(user.name)}" required>
+          </div>
+          <div class="form-group">
+            <label for="email">E-Posta *</label>
+            <input type="email" id="email" name="email" value="${escapeHtml(user.email)}" required>
+          </div>
+          <div class="form-group">
+            <label for="department">Fakülte / Bölüm</label>
+            <input type="text" id="department" name="department" value="${escapeHtml(user.department || '')}">
+          </div>
+          <div class="form-group">
+            <label for="graduationYear">Mezuniyet Yılı</label>
+            <input type="number" id="graduationYear" name="graduationYear" value="${escapeHtml(user.graduationYear || '')}" min="1950" max="2050">
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 Değişiklikleri Kaydet</button>
+            <a href="/users/${escapeHtml(user.id)}" class="btn btn-secondary">İptal</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  `;
+
+  return renderLayout({
+    title: `${escapeHtml(user.name)} - Bilgileri Düzenle | İÜ Mezun`,
+    activeNav: 'users',
+    pageTitle: '✏️ Mezun Bilgilerini Düzenle',
+    pageSubtitle: `#${escapeHtml(user.id)} numaralı mezun kaydını güncelleyin.`,
+    breadcrumbsHtml: `<a href="/">Ana Sayfa</a> <span class="separator">/</span> <a href="/users">Mezunlar</a> <span class="separator">/</span> <span class="current">Düzenle</span>`,
+    content,
+  });
 };
 
 /**
@@ -412,72 +204,70 @@ const renderEditUserPage = (user, options = {}) => {
  * @returns {string} Tam HTML çıktısı
  */
 const renderUserProfilePage = (user) => {
-  return `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${user.name} - Mezun Profili</title>
-  <style>
-    ${baseStyles}
-    .profile-card {
-      background: white;
-      border: 1px solid #e1e4e8;
-      border-radius: 8px;
-      padding: 30px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-    }
-    .info-row {
-      display: flex;
-      padding: 10px 0;
-      border-bottom: 1px solid #f0f0f0;
-    }
-    .info-label {
-      font-weight: 600;
-      color: #586069;
-      width: 150px;
-    }
-    .info-value {
-      color: #24292e;
-    }
-  </style>
-</head>
-<body>
-  <div class="nav">
-    <a href="/users">← Mezunlar Listesine Dön</a>
-    <a href="/api/users/${user.id}" target="_blank">JSON Görüntüle</a>
-  </div>
+  const content = `
+    <div class="card" style="max-width: 860px; margin: 0 auto;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1.5px solid #E5E7EB;">
+        <div style="display: flex; align-items: center; gap: 18px;">
+          <div style="width: 72px; height: 72px; border-radius: 50%; background-color: #214539; color: #F5BA13; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+            ${escapeHtml((user.name || 'M').charAt(0).toUpperCase())}
+          </div>
+          <div>
+            <h2 style="font-size: 24px; font-weight: 700; color: #111827; margin: 0;">${escapeHtml(user.name)}</h2>
+            <p style="color: #4B5563; font-size: 15px; margin-top: 4px;">${escapeHtml(user.department || 'Bölüm belirtilmedi')}</p>
+          </div>
+        </div>
+        <span class="badge badge-dark" style="font-size: 13px; padding: 6px 14px;">Mezun #${escapeHtml(user.id)}</span>
+      </div>
 
-  <div class="profile-card">
-    <span class="badge">Mezun ID: #${user.id}</span>
-    <h1 style="border-bottom: none; margin-bottom: 0;">${user.name}</h1>
-    <p style="color: #586069; margin-top: 4px;">${user.department || 'Bölüm belirtilmedi'}</p>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px;">
+        <div style="background-color: #F9FAFB; padding: 16px 20px; border-radius: 12px; border: 1px solid #E5E7EB;">
+          <div style="font-size: 12px; color: #6B7280; font-weight: 700; text-transform: uppercase;">E-Posta</div>
+          <div style="font-size: 15px; font-weight: 600; color: #111827; margin-top: 4px;">
+            <a href="mailto:${escapeHtml(user.email)}" style="color: #111827; text-decoration: underline;">${escapeHtml(user.email)}</a>
+          </div>
+        </div>
 
-    <div class="info-row">
-      <span class="info-label">E-Posta:</span>
-      <span class="info-value"><a href="mailto:${user.email}">${user.email}</a></span>
-    </div>
-    <div class="info-row">
-      <span class="info-label">Bölüm:</span>
-      <span class="info-value">${user.department || 'Belirtilmedi'}</span>
-    </div>
-    <div class="info-row">
-      <span class="info-label">Mezuniyet Yılı:</span>
-      <span class="info-value">${user.graduationYear || 'Belirtilmedi'}</span>
-    </div>
-    ${user.createdAt ? `<div class="info-row"><span class="info-label">Kayıt Tarihi:</span><span class="info-value">${user.createdAt}</span></div>` : ''}
-    ${user.updatedAt ? `<div class="info-row"><span class="info-label">Son Güncelleme:</span><span class="info-value">${user.updatedAt}</span></div>` : ''}
+        <div style="background-color: #F9FAFB; padding: 16px 20px; border-radius: 12px; border: 1px solid #E5E7EB;">
+          <div style="font-size: 12px; color: #6B7280; font-weight: 700; text-transform: uppercase;">Mezuniyet Yılı</div>
+          <div style="font-size: 15px; font-weight: 600; color: #111827; margin-top: 4px;">
+            ${escapeHtml(user.graduationYear || 'Belirtilmedi')}
+          </div>
+        </div>
 
-    <div style="margin-top: 25px; display: flex; gap: 10px; align-items: center;">
-      <a href="/users" class="btn-back">← Tüm Mezunları Listele</a>
-      <a href="/users/${user.id}/edit" class="btn-edit" style="padding: 8px 16px; font-size: 0.95em;">✏️ Düzenle</a>
-      <form method="POST" action="/users/${user.id}/delete" style="display: inline; margin: 0;" onsubmit="return confirm('${user.name} mezun kaydını silmek istediğinize emin misiniz?');">
-        <button type="submit" class="btn-delete" style="padding: 8px 16px; font-size: 0.95em;">🗑️ Sil</button>
-      </form>
+        ${user.createdAt ? `
+        <div style="background-color: #F9FAFB; padding: 16px 20px; border-radius: 12px; border: 1px solid #E5E7EB;">
+          <div style="font-size: 12px; color: #6B7280; font-weight: 700; text-transform: uppercase;">Kayıt Tarihi</div>
+          <div style="font-size: 14px; color: #374151; margin-top: 4px;">${escapeHtml(user.createdAt)}</div>
+        </div>
+        ` : ''}
+
+        ${user.updatedAt ? `
+        <div style="background-color: #F9FAFB; padding: 16px 20px; border-radius: 12px; border: 1px solid #E5E7EB;">
+          <div style="font-size: 12px; color: #6B7280; font-weight: 700; text-transform: uppercase;">Son Güncelleme</div>
+          <div style="font-size: 14px; color: #374151; margin-top: 4px;">${escapeHtml(user.updatedAt)}</div>
+        </div>
+        ` : ''}
+      </div>
+
+      <div style="display: flex; gap: 12px; align-items: center; border-top: 1.5px solid #E5E7EB; padding-top: 20px; flex-wrap: wrap;">
+        <a href="/users" class="btn btn-secondary">← Tüm Mezunlar Listesi</a>
+        <a href="/users/${escapeHtml(user.id)}/edit" class="btn btn-primary">✏️ Bilgileri Düzenle</a>
+        <a href="/api/users/${escapeHtml(user.id)}" target="_blank" class="btn btn-outline" style="color: #111827; border-color: #D1D5DB;">JSON API</a>
+        <form method="POST" action="/users/${escapeHtml(user.id)}/delete" style="display: inline; margin-left: auto;" onsubmit="return confirm('${escapeHtml(user.name)} mezun kaydını silmek istediğinize emin misiniz?');">
+          <button type="submit" class="btn btn-danger">🗑️ Mezun Kaydını Sil</button>
+        </form>
+      </div>
     </div>
-  </div>
-</body>
-</html>`;
+  `;
+
+  return renderLayout({
+    title: `${escapeHtml(user.name)} - Mezun Profili | İÜ Mezun`,
+    activeNav: 'users',
+    pageTitle: `${escapeHtml(user.name)}`,
+    pageSubtitle: 'İstanbul Üniversitesi Mezun Profil Kartı',
+    breadcrumbsHtml: `<a href="/">Ana Sayfa</a> <span class="separator">/</span> <a href="/users">Mezunlar</a> <span class="separator">/</span> <span class="current">${escapeHtml(user.name)}</span>`,
+    content,
+  });
 };
 
 /**
@@ -486,25 +276,27 @@ const renderUserProfilePage = (user) => {
  * @returns {string} Tam HTML çıktısı
  */
 const renderUserNotFoundPage = (id) => {
-  return `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kullanıcı Bulunamadı - 404</title>
-  <style>${baseStyles}</style>
-</head>
-<body>
-  <div class="nav">
-    <a href="/users">← Mezunlar Listesi</a>
-  </div>
-  <div class="card" style="text-align: center; padding: 40px 20px;">
-    <h2>❌ Mezun Bulunamadı (404)</h2>
-    <p>Aradığınız <strong>#${id}</strong> numaralı mezun kaydı sistemde mevcut değil.</p>
-    <a href="/users" class="btn-detail" style="display: inline-block; margin-top: 15px; padding: 8px 16px;">Mezunlar Listesine Dön</a>
-  </div>
-</body>
-</html>`;
+  const content = `
+    <div class="card" style="max-width: 680px; margin: 40px auto; text-align: center; padding: 48px 24px;">
+      <div style="font-size: 52px; margin-bottom: 12px;">🎓 ❌</div>
+      <span class="badge badge-danger" style="margin-bottom: 14px;">404 BULUNAMADI</span>
+      <h2 style="font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 8px;">Mezun Kaydı Bulunamadı</h2>
+      <p style="color: #4B5563; font-size: 15px; margin-bottom: 24px;">
+        Aradığınız <strong>#${escapeHtml(id)}</strong> numaralı mezun profili sistemde mevcut değil veya kaldırılmış.
+      </p>
+      <div style="display: flex; justify-content: center; gap: 12px;">
+        <a href="/users" class="btn btn-primary">← Mezunlar Listesine Dön</a>
+        <a href="/" class="btn btn-secondary">Ana Sayfa</a>
+      </div>
+    </div>
+  `;
+
+  return renderLayout({
+    title: 'Mezun Bulunamadı (404) | İÜ Mezun',
+    activeNav: 'users',
+    breadcrumbsHtml: '<a href="/">Ana Sayfa</a> <span class="separator">/</span> <a href="/users">Mezunlar</a> <span class="separator">/</span> <span class="current">Kayıt Bulunamadı</span>',
+    content,
+  });
 };
 
 module.exports = {
