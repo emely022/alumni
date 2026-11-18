@@ -20,6 +20,7 @@ The project grows week by week, following the course structure — starting with
 - **404 Guardian & Generic 404 Redirect** — detects undefined routes and unsupported HTTP methods, records `[404]` entries with explanatory `reason` to terminal and `backend/logs/error.logs`, and redirects invalid requests (`302`) to the XSS-safe `/404` view without redirect loops.
 - **5xx Guardian Middleware** — catches server-side runtime/database errors (including `AggregateError`), logs `[5xx]` records with full stack traces to terminal and `backend/logs/error.logs`, and returns structured JSON error responses (`500` or explicit `4xx`).
 - **Domain & Validation Rules (`ddd.md`)** — comprehensive schema dictionary, field limits (e.g., `job_postings` mandatory `title` max 120 chars, mandatory `company`, optional `city` & `description`), and entity lifecycle rules.
+- **Brand & Visual Identity ([`brand.md`](brand.md))** — official corporate identity, Istanbul University color palette (navy, gold, burgundy), typography hierarchy, Beyazıt Gate logo usage, and UI design system standards.
 
 ## 🛠️ Tech Stack
 
@@ -102,6 +103,7 @@ alumni/
 ├── .gitignore                       # Excludes .env, node_modules, logs/
 ├── docker-compose.yml               # PostgreSQL db + Node app orchestration
 ├── Dockerfile                       # Backend container image
+├── brand.md                         # Brand identity, typography, color palette & UI guidelines
 ├── ddd.md                           # Domain-driven data architecture, ER diagram & rules
 └── README.md
 ```
@@ -316,8 +318,10 @@ Konteynerler ayağa kalktıktan sonra tarayıcınızdan aşağıdaki adreslere e
 
 ---
 
-## 📚 API Documentation
+## 📚 Documentation & Guidelines
 
-Tüm REST API ve Nested uç noktaları interaktif olarak görüntülemek ve tarayıcı üzerinden test etmek için:
+Tüm mimari, veri ve kurumsal kimlik dokümanlarına aşağıdaki bağlantılardan erişebilirsiniz:
 
-🔗 **Swagger UI:** [http://localhost:3000/api/swagger](http://localhost:3000/api/swagger)
+- 🏛️ **[Marka ve Kurumsal Kimlik Rehberi (`brand.md`)](brand.md)** — İstanbul Üniversitesi kurumsal renk paleti (lacivert, altın, bordo), Beyazıt Kapısı logo kullanımı, tipografi standartları ve UI tasarım sistemi ilkeleri.
+- 📐 **[Veri Tasarım Dokümanı (`ddd.md`)](ddd.md)** — PostgreSQL ilişkisel veri tabanı şeması, ER diyagramı, foreign key kısıtları ve varlık iş/doğrulama kuralları.
+- 🔗 **[Swagger UI API Dokümantasyonu](http://localhost:3000/api/swagger)** — Tüm RESTful ve nested API uç noktalarını interaktif olarak test etme arayüzü (`/api/swagger`).
