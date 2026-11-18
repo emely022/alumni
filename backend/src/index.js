@@ -26,6 +26,9 @@ app.use(express.urlencoded({ extended: true }));
 // Swagger API Documentation
 app.use('/api/swagger', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+// Statik dosyalar (örn: /istanbul-universitesi-logo.png)
+app.use(express.static(path.join(__dirname, '../public')));
+
 app.use('/', routes);
 
 // 404 Guardian Middleware: Tanımlı olmayan rotalar için nedenini açıklayan 404 yanıtı

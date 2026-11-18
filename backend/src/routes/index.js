@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const router = express.Router();
 const homeController = require('../controllers/homeController');
@@ -13,17 +14,22 @@ const apiApplicationRoutes = require('./apiApplicationRoutes');
 const jobPostingRoutes = require('./jobPostingRoutes');
 const applicationRoutes = require('./applicationRoutes');
 
+// Kurumsal logo uç noktası
+router.get('/istanbul-universitesi-logo.png', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../../public/istanbul-universitesi-logo.png'));
+});
+
 /**
  * @swagger
  * /:
  *   get:
- *     summary: Ana Karşılama Sayfası
- *     description: Alumni Tracking System HTML ana sayfasını döner.
+ *     summary: "İstanbul Üniversitesi Mezun Bilgi Sistemi Ana Sayfası"
+ *     description: "İstanbul Üniversitesi ve design.md tasarım sistemine uygun olarak hazırlanan; header, footer, menü, logo, ürünler, mezunlar listesi ve mezun profillerini içeren HTML ana sayfası."
  *     tags:
  *       - General
  *     responses:
  *       200:
- *         description: Başarılı HTML sayfası
+ *         description: "Başarılı HTML ana sayfası"
  *         content:
  *           text/html:
  *             schema:

@@ -19,8 +19,9 @@ The project grows week by week, following the course structure — starting with
 - **Request Logging Middleware** — single-line terminal access logs with timestamp, HTTP method, route, status code, and response duration (`HH:MM:SS METHOD ROUTE STATUS DURATIONms`).
 - **404 Guardian & Generic 404 Redirect** — detects undefined routes and unsupported HTTP methods, records `[404]` entries with explanatory `reason` to terminal and `backend/logs/error.logs`, and redirects invalid requests (`302`) to the XSS-safe `/404` view without redirect loops.
 - **5xx Guardian Middleware** — catches server-side runtime/database errors (including `AggregateError`), logs `[5xx]` records with full stack traces to terminal and `backend/logs/error.logs`, and returns structured JSON error responses (`500` or explicit `4xx`).
-- **Domain & Validation Rules (`ddd.md`)** — comprehensive schema dictionary, field limits (e.g., `job_postings` mandatory `title` max 120 chars, mandatory `company`, optional `city` & `description`), and entity lifecycle rules.
-- **Brand & Visual Identity ([`brand.md`](brand.md))** — official corporate identity, Istanbul University color palette (navy, gold, burgundy), typography hierarchy, Beyazıt Gate logo usage, and UI design system standards.
+- **Domain & Validation Rules ([`ddd.md`](ddd.md))** — comprehensive schema dictionary, field limits (e.g., `job_postings` mandatory `title` max 120 chars, mandatory `company`, optional `city` & `description`), and entity lifecycle rules.
+- **Brand & Visual Identity ([`brand.md`](brand.md))** — official corporate identity, Istanbul University color palette (navy, gold, burgundy), typography hierarchy, Beyazıt Gate logo usage, and institutional standards.
+- **Design System & UI Guidelines ([`design.md`](design.md))** — modern Letters-inspired design system featuring `#214539` dark forest green canvas, `#F5BA13` yellow action buttons, high-contrast white cards, Arial typography, and accessible UI components.
 
 ## 🛠️ Tech Stack
 
@@ -103,7 +104,8 @@ alumni/
 ├── .gitignore                       # Excludes .env, node_modules, logs/
 ├── docker-compose.yml               # PostgreSQL db + Node app orchestration
 ├── Dockerfile                       # Backend container image
-├── brand.md                         # Brand identity, typography, color palette & UI guidelines
+├── brand.md                         # Brand identity, typography, color palette & institutional guidelines
+├── design.md                        # Letters-inspired design system (#214539 canvas, yellow buttons, white cards)
 ├── ddd.md                           # Domain-driven data architecture, ER diagram & rules
 └── README.md
 ```
@@ -320,8 +322,9 @@ Konteynerler ayağa kalktıktan sonra tarayıcınızdan aşağıdaki adreslere e
 
 ## 📚 Documentation & Guidelines
 
-Tüm mimari, veri ve kurumsal kimlik dokümanlarına aşağıdaki bağlantılardan erişebilirsiniz:
+Tüm mimari, veri, kurumsal kimlik ve arayüz tasarım sistemi dokümanlarına aşağıdaki bağlantılardan erişebilirsiniz:
 
-- 🏛️ **[Marka ve Kurumsal Kimlik Rehberi (`brand.md`)](brand.md)** — İstanbul Üniversitesi kurumsal renk paleti (lacivert, altın, bordo), Beyazıt Kapısı logo kullanımı, tipografi standartları ve UI tasarım sistemi ilkeleri.
+- 🏛️ **[Marka ve Kurumsal Kimlik Rehberi (`brand.md`)](brand.md)** — İstanbul Üniversitesi resmi kurumsal kimliği, renk paleti (lacivert, altın sarısı, bordo), Beyazıt Kapısı logo standartları ve tipografi hiyerarşisi.
+- 🎨 **[Tasarım Sistemi ve UI Rehberi (`design.md`)](design.md)** — Letters stilinden esinlenen koyu yeşil zemin (`#214539`), sarı aksiyon butonları (`#F5BA13`), beyaz kartlar (`#FFFFFF`), Arial tipografi ve WCAG AA (en az 4.5:1) kontrast kurallarını içeren modern arayüz sistemi.
 - 📐 **[Veri Tasarım Dokümanı (`ddd.md`)](ddd.md)** — PostgreSQL ilişkisel veri tabanı şeması, ER diyagramı, foreign key kısıtları ve varlık iş/doğrulama kuralları.
 - 🔗 **[Swagger UI API Dokümantasyonu](http://localhost:3000/api/swagger)** — Tüm RESTful ve nested API uç noktalarını interaktif olarak test etme arayüzü (`/api/swagger`).
