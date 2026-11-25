@@ -55,6 +55,20 @@ router.post('/', userController.createUser);
 
 /**
  * @swagger
+ * /users/new:
+ *   get:
+ *     summary: Yeni Mezun & Üye Kayıt Sayfası
+ *     description: Yeni mezun ve üye kayıt formunu sunar (/register sayfasına yönlendirme veya doğrudan render).
+ *     tags:
+ *       - Users (Web View)
+ *     responses:
+ *       200:
+ *         description: Başarılı HTML kayıt sayfası
+ */
+router.get('/new', userController.getRegisterPage);
+
+/**
+ * @swagger
  * /users/{id}/edit:
  *   get:
  *     summary: Mezun Düzenleme Formu Web Sayfası

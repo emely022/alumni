@@ -10,6 +10,8 @@
  * - Logo: /istanbul-universitesi-logo.png
  */
 
+const { renderHeaderMenu } = require('../components/headerMenu');
+
 /**
  * XSS Koruması için HTML kaçış fonksiyonu
  * @param {unknown} value 
@@ -29,12 +31,13 @@ const escapeHtml = (value) => {
  * Sayfa Çatısı (Layout Wrapper)
  * @param {Object} options
  * @param {string} options.title - Sayfa başlığı (<title>)
- * @param {string} [options.activeNav] - Aktif menü öğesi: 'home' | 'users' | 'announcements' | 'jobs' | 'applications' | 'swagger'
+ * @param {string} [options.activeNav] - Aktif menü öğesi: 'home' | 'users' | 'announcements' | 'jobs' | 'applications' | 'swagger' | 'login' | 'register'
  * @param {string} options.content - Sayfanın ana gövde HTML içeriği
  * @param {string} [options.pageTitle] - H1 veya ana başlık metni
  * @param {string} [options.pageSubtitle] - Başlık altı açıklama
  * @param {string} [options.actionButtonHtml] - Başlığın sağındaki opsiyonel buton
  * @param {string} [options.breadcrumbsHtml] - Ekmek kırıntısı gezinme
+ * @param {Object|null} [options.currentUser] - Oturum açmış kullanıcı bilgisi
  * @returns {string} Tam HTML dokümanı
  */
 const renderLayout = ({
@@ -45,7 +48,9 @@ const renderLayout = ({
   pageSubtitle = '',
   actionButtonHtml = '',
   breadcrumbsHtml = '',
+  currentUser,
 }) => {
+  const headerHtml = renderHeaderMenu({ activeNav, currentUser });
   return `<!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -621,46 +626,7 @@ const renderLayout = ({
   </style>
 </head>
 <body>
-
-  <!-- 1. Institutional Top Bar -->
-  <div class="top-bar">
-    <div class="top-bar-title">
-      <span>🏛️</span>
-      <span>T.C. İSTANBUL ÜNİVERSİTESİ &bull; <strong>1453'TEN GELECEĞE BİLİM KÖPRÜSÜ</strong></span>
-    </div>
-    <div class="top-bar-links">
-      <a href="/api/swagger" target="_blank">Swagger API</a>
-      <a href="https://www.istanbul.edu.tr" target="_blank" rel="noopener">istanbul.edu.tr</a>
-      <a href="/about">Hakkında</a>
-    </div>
-  </div>
-
-  <!-- 2. Sticky Header & Navigation Menu -->
-  <header class="header">
-    <div class="header-inner">
-      <a href="/" class="brand-link">
-        <img src="/istanbul-universitesi-logo.png" alt="İstanbul Üniversitesi Logosu" class="brand-logo-img">
-        <div class="brand-texts">
-          <span class="brand-name">İSTANBUL ÜNİVERSİTESİ</span>
-          <span class="brand-sub">Mezun Bilgi Sistemi</span>
-        </div>
-      </a>
-
-      <nav class="nav-menu">
-        <a href="/" class="nav-item ${activeNav === 'home' ? 'active' : ''}">Ana Sayfa</a>
-        <a href="/users" class="nav-item ${activeNav === 'users' ? 'active' : ''}">Mezunlar</a>
-        <a href="/announcements" class="nav-item ${activeNav === 'announcements' ? 'active' : ''}">Duyurular</a>
-        <a href="/job-postings" class="nav-item ${activeNav === 'jobs' ? 'active' : ''}">Kariyer & İlanlar</a>
-        <a href="/applications" class="nav-item ${activeNav === 'applications' ? 'active' : ''}">Başvurular</a>
-        <a href="/api/swagger" class="nav-item ${activeNav === 'swagger' ? 'active' : ''}" target="_blank">API Docs</a>
-      </nav>
-
-      <a href="/users/new" class="nav-cta">
-        <span>+</span>
-        <span>Mezun Kaydı</span>
-      </a>
-    </div>
-  </header>
+${headerHtml}
 
   <!-- 3. Main Page Shell -->
   <main class="main-wrapper">
@@ -695,7 +661,7 @@ const renderLayout = ({
         <h5>Mezun Ağı</h5>
         <ul>
           <li><a href="/users">Mezun Dizini</a></li>
-          <li><a href="/users/new">Mezun Kaydı Yap</a></li>
+          <li><a href="/register">Mezun Kaydı Yap</a></li>
           <li><a href="/#alumni-profiles">Öne Çıkan Mezunlar</a></li>
           <li><a href="/#product-page">Mezun Hizmetleri</a></li>
         </ul>

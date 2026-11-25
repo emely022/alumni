@@ -132,6 +132,7 @@ const renderUsersPage = (users = [], options = {}) => {
     pageTitle: '🎓 Mezunlar Dizini (Alumni Directory)',
     pageSubtitle: 'İstanbul Üniversitesi mezunlarını görüntüleyin, fakültelere göre arayın veya yeni mezun ekleyin.',
     breadcrumbsHtml: '<a href="/">Ana Sayfa</a> <span class="separator">/</span> <span class="current">Mezunlar</span>',
+    actionButtonHtml: '<a href="/register" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px;"><span>➕</span><span>Yeni Mezun / Üye Kaydı</span></a>',
     content,
   });
 };

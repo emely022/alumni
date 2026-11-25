@@ -7,12 +7,14 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const express = require('express');
+const session = require('express-session');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 const routes = require('./routes');
 const requestLogger = require('./middlewares/logger');
 const notFoundGuardian = require('./middlewares/notFoundGuardian');
 const serverErrorGuardian = require('./middlewares/serverErrorGuardian');
+const { sessionContextMiddleware } = require('./utils/sessionContext');
 const { testDbConnection } = require('./config/db');
 const { runMigrations } = require('./config/migrate');
 
@@ -22,6 +24,23 @@ const PORT = process.env.PORT || 3000;
 app.use(requestLogger);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Cookie tabanlı oturum yönetimi (express-session)
+app.use(
+  session({
+    name: 'iu_alumni.sid',
+    secret: process.env.SESSION_SECRET || 'iu_alumni_session_secret_key_2026_secure',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 1000 * 60 * 60 * 24, // 24 saat
+    },
+  })
+);
+app.use(sessionContextMiddleware);
 
 // Swagger API Documentation
 app.use('/api/swagger', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

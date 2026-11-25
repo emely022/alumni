@@ -11,10 +11,26 @@ const applicationView = require('../views/applicationView');
  * ve applicationView üzerinden HTML sayfalarını render ederek sunar.
  */
 
+const getSessionUserAndScope = (req) => {
+  const currentUser = req && req.session && req.session.user ? req.session.user : null;
+  const role = currentUser && currentUser.role ? String(currentUser.role).toLowerCase() : 'alumni';
+  const isSelfOnlyRole = Boolean(currentUser && (role === 'alumni' || role === 'student'));
+  return { currentUser, role, isSelfOnlyRole };
+};
+
 // GET /applications - İş başvuruları listesi ve yeni başvuru formu
 const getApplications = async (req, res) => {
   try {
-    const rawApplications = await ApplicationModel.findAll();
+    const { currentUser, isSelfOnlyRole } = getSessionUserAndScope(req);
+    const filter = isSelfOnlyRole && currentUser ? { userId: currentUser.id } : {};
+    const allFetchedApplications = await ApplicationModel.findAll(filter);
+
+    // Mezun (alumni) ve öğrenci (student) yalnızca kendi başvurularını görebilir
+    const rawApplications =
+      isSelfOnlyRole && currentUser
+        ? allFetchedApplications.filter((a) => Number(a.userId) === Number(currentUser.id))
+        : allFetchedApplications;
+
     let jobPostings = [];
     let users = [];
 
@@ -36,6 +52,14 @@ const getApplications = async (req, res) => {
     users.forEach((u) => {
       userMap[u.id] = u;
     });
+    if (currentUser && !userMap[currentUser.id]) {
+      userMap[currentUser.id] = currentUser;
+    }
+
+    const selectableUsers =
+      isSelfOnlyRole && currentUser
+        ? [userMap[currentUser.id] || currentUser]
+        : users;
 
     const enrichedApplications = rawApplications.map((app) => {
       const job = jobMap[app.jobPostingId];
@@ -66,7 +90,7 @@ const getApplications = async (req, res) => {
         applicationView.renderApplicationsPage(
           enrichedApplications,
           { success, error, selectedJobId },
-          { jobPostings, users }
+          { jobPostings, users: selectableUsers }
         )
       );
     }
@@ -97,6 +121,14 @@ const getApplicationById = async (req, res) => {
         return res.status(404).send(applicationView.renderApplicationNotFoundPage(req.params.id));
       }
       return res.status(404).json({ error: 'Başvuru bulunamadı' });
+    }
+
+    const { currentUser, isSelfOnlyRole } = getSessionUserAndScope(req);
+    if (isSelfOnlyRole && currentUser && Number(app.userId) !== Number(currentUser.id)) {
+      if (req && req.accepts && req.accepts('html') && (!req.path || !req.path.startsWith('/api'))) {
+        return res.redirect('/applications?error=' + encodeURIComponent('Yalnızca kendi başvurularınızı görüntüleyebilirsiniz.'));
+      }
+      return res.status(403).json({ error: 'Yalnızca kendi başvurularınızı görüntüleyebilirsiniz.' });
     }
 
     let jobPosting = null;
@@ -137,6 +169,14 @@ const getEditApplicationForm = async (req, res) => {
       return res.status(404).json({ error: 'Başvuru bulunamadı' });
     }
 
+    const { currentUser, isSelfOnlyRole } = getSessionUserAndScope(req);
+    if (isSelfOnlyRole && currentUser && Number(app.userId) !== Number(currentUser.id)) {
+      if (req && req.accepts && req.accepts('html')) {
+        return res.redirect('/applications?error=' + encodeURIComponent('Yalnızca kendi başvurularınızı düzenleyebilirsiniz.'));
+      }
+      return res.status(403).json({ error: 'Yalnızca kendi başvurularınızı düzenleyebilirsiniz.' });
+    }
+
     let jobPosting = null;
     let user = null;
     try {
@@ -161,8 +201,10 @@ const getEditApplicationForm = async (req, res) => {
 // POST /applications - Yeni iş başvurusu ekler
 const createApplication = async (req, res) => {
   const { jobPostingId, userId, resumeUrl, coverNote, status } = req.body || {};
+  const { currentUser, isSelfOnlyRole } = getSessionUserAndScope(req);
+  const effectiveUserId = isSelfOnlyRole && currentUser ? currentUser.id : userId;
 
-  if (!jobPostingId || !userId) {
+  if (!jobPostingId || !effectiveUserId) {
     if (req && req.accepts && req.accepts('html') && (!req.is || !req.is('json'))) {
       return res.redirect(
         '/applications?error=' + encodeURIComponent('İş ilanı ve başvuran mezun seçimi zorunludur.')
@@ -173,7 +215,7 @@ const createApplication = async (req, res) => {
 
   try {
     const parsedJobId = parseInt(jobPostingId, 10);
-    const parsedUserId = parseInt(userId, 10);
+    const parsedUserId = parseInt(effectiveUserId, 10);
 
     // Mükerrer başvuru kontrolü
     const existing = await ApplicationModel.findByJobAndUser(parsedJobId, parsedUserId);
@@ -226,6 +268,14 @@ const updateApplicationForm = async (req, res) => {
       return res.status(404).json({ error: 'Başvuru bulunamadı' });
     }
 
+    const { currentUser, isSelfOnlyRole } = getSessionUserAndScope(req);
+    if (isSelfOnlyRole && currentUser && Number(app.userId) !== Number(currentUser.id)) {
+      if (req && req.accepts && req.accepts('html') && (!req.is || !req.is('json'))) {
+        return res.redirect('/applications?error=' + encodeURIComponent('Yalnızca kendi başvurularınızı güncelleyebilirsiniz.'));
+      }
+      return res.status(403).json({ error: 'Yalnızca kendi başvurularınızı güncelleyebilirsiniz.' });
+    }
+
     const { status, resumeUrl, coverNote } = req.body || {};
 
     await ApplicationModel.update(appId, {
@@ -253,6 +303,22 @@ const updateApplicationForm = async (req, res) => {
 const deleteApplicationForm = async (req, res) => {
   const appId = parseInt(req.params.id, 10);
   try {
+    const existing = await ApplicationModel.findById(appId);
+    if (!existing) {
+      if (req && req.accepts && req.accepts('html')) {
+        return res.status(404).send(applicationView.renderApplicationNotFoundPage(req.params.id));
+      }
+      return res.status(404).json({ error: 'Başvuru bulunamadı' });
+    }
+
+    const { currentUser, isSelfOnlyRole } = getSessionUserAndScope(req);
+    if (isSelfOnlyRole && currentUser && Number(existing.userId) !== Number(currentUser.id)) {
+      if (req && req.accepts && req.accepts('html') && (!req.is || !req.is('json'))) {
+        return res.redirect('/applications?error=' + encodeURIComponent('Yalnızca kendi başvurularınızı silebilirsiniz.'));
+      }
+      return res.status(403).json({ error: 'Yalnızca kendi başvurularınızı silebilirsiniz.' });
+    }
+
     const deleted = await ApplicationModel.remove(appId);
 
     if (!deleted) {

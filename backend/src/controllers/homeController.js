@@ -1,5 +1,6 @@
 const { pool } = require('../config/db');
-const { homeView, notFoundView } = require('../views');
+const UserModel = require('../models/userModel');
+const { homeView, notFoundView, layout } = require('../views');
 
 const getHome = async (req, res) => {
   let stats = {
@@ -33,129 +34,74 @@ const getHome = async (req, res) => {
     // Veritabanı kapalıysa kurumsal varsayılanlar kullanılır
   }
 
+  const sessionUser = req && req.session && req.session.user ? req.session.user : null;
+  if (sessionUser) {
+    let myAppliedJobs = [];
+    let myJobPostings = [];
+    let myAnnouncements = [];
+    let freshUser = null;
+
+    try {
+      [freshUser, myAppliedJobs, myJobPostings, myAnnouncements] = await Promise.all([
+        UserModel.findById(sessionUser.id).catch(() => null),
+        UserModel.getAppliedJobs(sessionUser.id).catch(() => []),
+        UserModel.getJobPostings(sessionUser.id).catch(() => []),
+        UserModel.getAnnouncements(sessionUser.id).catch(() => []),
+      ]);
+    } catch (_) {}
+
+    const activeUser = freshUser
+      ? { ...sessionUser, ...freshUser }
+      : sessionUser;
+
+    stats.currentUser = activeUser;
+    stats.userDashboard = {
+      user: activeUser,
+      myAppliedJobs,
+      myJobPostings,
+      myAnnouncements,
+    };
+  }
+
   const html = homeView.renderHomePage(stats);
   return res.status(200).send(html);
 };
 
 const getAbout = (req, res) => {
-  const html = `<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>About Alumni</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background-color: #f8fafc;
-      color: #1e293b;
-      line-height: 1.6;
-      padding: 40px 20px;
-    }
-    .container {
-      max-width: 760px;
-      margin: 0 auto;
-      background: #ffffff;
-      padding: 36px 32px;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-      border: 1px solid #e2e8f0;
-    }
-    h1 {
-      font-size: 2rem;
-      color: #0f172a;
-      margin-bottom: 16px;
-      border-bottom: 2px solid #e2e8f0;
-      padding-bottom: 12px;
-    }
-    h2 {
-      font-size: 1.25rem;
-      color: #334155;
-      margin-top: 24px;
-      margin-bottom: 12px;
-    }
-    p {
-      color: #475569;
-      margin-bottom: 16px;
-      font-size: 1.05rem;
-    }
-    ul {
-      list-style-type: none;
-      padding-left: 0;
-      margin-bottom: 24px;
-    }
-    li {
-      position: relative;
-      padding-left: 28px;
-      margin-bottom: 12px;
-      color: #334155;
-    }
-    li::before {
-      content: "✓";
-      position: absolute;
-      left: 6px;
-      color: #2563eb;
-      font-weight: bold;
-    }
-    .badge-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 12px;
-      margin-bottom: 24px;
-    }
-    .badge {
-      background-color: #eff6ff;
-      color: #1d4ed8;
-      border: 1px solid #bfdbfe;
-      padding: 4px 12px;
-      border-radius: 9999px;
-      font-size: 0.875rem;
-      font-weight: 500;
-    }
-    .nav-link {
-      display: inline-block;
-      margin-top: 12px;
-      color: #2563eb;
-      text-decoration: none;
-      font-weight: 500;
-    }
-    .nav-link:hover {
-      text-decoration: underline;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>About Alumni</h1>
-    <p>
-      Alumni Tracking System, mezunların okulları veya üniversiteleri ile olan bağlarını sürdürmelerini sağlamak için tasarlanmış bir platformdur. Mezunlar topluluğunun bir arada kalmasına, karşılıklı iletişimin devam etmesine ve gelecekteki etkinliklerden haberdar olunmasına olanak tanır.
-    </p>
+  const html = layout.renderLayout({
+    title: 'Proje Hakkında | İstanbul Üniversitesi Mezun Bilgi Sistemi',
+    activeNav: 'about',
+    pageTitle: '🏛️ İstanbul Üniversitesi Mezun Bilgi Sistemi Hakkında',
+    pageSubtitle: '1453\'ten bugüne uzanan bilim mirasını mezunlarımız, öğrencilerimiz ve akademisyenlerimiz için tek bir dijital ağda buluşturuyoruz.',
+    breadcrumbsHtml: '<a href="/">Ana Sayfa</a> <span class="separator">/</span> <span class="current">Hakkında</span>',
+    content: `
+      <div class="card" style="padding: 36px 32px;">
+        <h2 style="font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 14px;">About Alumni Tracking System</h2>
+        <p style="color: #374151; font-size: 15px; margin-bottom: 20px;">
+          Alumni Tracking System, mezunların üniversiteleri ile olan bağlarını sürdürmelerini sağlamak için tasarlanmış rol tabanlı (RBAC) bir dijital platformdur. Mezunlar topluluğunun bir arada kalmasına, kariyer fırsatlarının paylaşılmasına ve kampüs etkinliklerinden haberdar olunmasına olanak tanır.
+        </p>
 
-    <h2>Öne Çıkan Özellikler</h2>
-    <ul>
-      <li><strong>Mezun Profilleri:</strong> Kişisel mezun profilleri oluşturma ve görüntüleme.</li>
-      <li><strong>İletişim Rehberi:</strong> Diğer mezunların iletişim bilgilerine güvenle erişim ve arama.</li>
-      <li><strong>Etkinlik Duyuruları:</strong> Yaklaşan mezun buluşmaları, seminerler ve duyuruları takip etme.</li>
-    </ul>
+        <h3 style="font-size: 18px; font-weight: 700; color: #111827; margin: 20px 0 12px 0;">Öne Çıkan Özellikler</h3>
+        <ul style="list-style: none; padding: 0; margin: 0 0 24px 0; display: flex; flex-direction: column; gap: 10px; color: #374151;">
+          <li>✅ <strong>Mezun Profilleri & Dizini:</strong> Kişisel mezun profilleri oluşturma, düzenleme ve arama.</li>
+          <li>✅ <strong>Rol Tabanlı Dinamik Navigasyon (RBAC):</strong> Admin, Mezun, Öğrenci, Koordinatör ve İşveren rollerine özel dinamik menü ve yetkilendirme.</li>
+          <li>✅ <strong>Kariyer & İş İlanları:</strong> İş ve staj ilanları yayınlama, aday başvurusu yapma ve başvuru durumu takip etme.</li>
+          <li>✅ <strong>Yönetim Paneli (/admin):</strong> Tüm sistem verilerini ve kullanıcı rollerini tek merkezden yönetme.</li>
+        </ul>
 
-    <h2>Teknoloji Yığını</h2>
-    <div class="badge-group">
-      <span class="badge">Node.js</span>
-      <span class="badge">Express</span>
-      <span class="badge">PostgreSQL</span>
-      <span class="badge">Docker &amp; Compose</span>
-    </div>
+        <h3 style="font-size: 18px; font-weight: 700; color: #111827; margin: 20px 0 12px 0;">Teknoloji Yığını</h3>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px;">
+          <span class="badge badge-dark">Node.js</span>
+          <span class="badge badge-dark">Express.js</span>
+          <span class="badge badge-dark">PostgreSQL 16</span>
+          <span class="badge badge-warning">express-session &amp; crypto.scrypt</span>
+          <span class="badge badge-neutral">Docker &amp; Compose</span>
+        </div>
 
-    <a href="/" class="nav-link">← Ana Sayfaya Dön</a>
-  </div>
-</body>
-</html>`;
+        <a href="/" class="btn btn-primary">← Ana Sayfaya Dön</a>
+      </div>
+    `,
+  });
 
   res.status(200).send(html);
 };

@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { pool } = require('./db');
+const { hashPassword } = require('../utils/password');
 
 /**
  * Migration Runner
@@ -91,6 +92,27 @@ const runMigrations = async () => {
   }
 
   console.log(`[Migrations] Tamamlandı: ${appliedCount} yeni uygulandı, ${skippedCount} atlandı, toplam ${migrationFiles.length} dosya.`);
+
+  // Varsayılan sistem yöneticisi (admin) hesabını oluştur ve yetkilendir
+  try {
+    const adminPasswordHash = await hashPassword('Admin1453!');
+    await pool.query(
+      `INSERT INTO users (name, email, role, is_active, department, graduation_year, password_hash)
+       VALUES ($1, $2, 'admin', TRUE, $3, 2024, $4)
+       ON CONFLICT (email) DO UPDATE SET
+         role = 'admin',
+         is_active = TRUE,
+         password_hash = COALESCE(users.password_hash, EXCLUDED.password_hash),
+         updated_at = CURRENT_TIMESTAMP;`,
+      ['Emel Yurt (Admin)', 'admin@istanbul.edu.tr', 'Bilgisayar Mühendisliği', adminPasswordHash]
+    );
+    await pool.query(
+      `UPDATE users SET role = 'admin', is_active = TRUE WHERE LOWER(email) LIKE '%emel%' OR LOWER(name) LIKE '%emel%';`
+    );
+  } catch (adminErr) {
+    console.warn('[Migrations] Varsayılan admin hesabı kontrolü atlandı:', adminErr.message);
+  }
+
   return { applied: appliedCount, skipped: skippedCount, total: migrationFiles.length };
 };
 

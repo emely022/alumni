@@ -9,6 +9,11 @@ The project grows week by week, following the course structure — starting with
 ## ✨ Features
 
 - **Alumni Profiles & Directory** — create, update, search, and view alumni profiles and graduation details.
+- **Member & Alumni Registration (`/register`)** — comprehensive registration flow with user role selection (alumni, student, coordinator, employer, admin), academic department picker, graduation year, and secure password validation.
+- **Cryptographic Password Storage (scrypt)** — passwords require minimum 8 characters with matching confirmation; hashed using Node's native `crypto.scrypt` (128-bit salt + 512-bit derived key); never stored in plaintext and strictly omitted from all API responses (including `/api/users`), logs, and redirect query params.
+- **Session Authentication (`/login`, `/logout`) & Auth Guardians** — cookie-based session authentication via `express-session` (`SESSION_SECRET`); generic error message on invalid login; `authMiddleware` and `requireAdmin` protect web routes (redirecting to `/login` or returning `403`) and API endpoints (`401` / `403` JSON) while logging all unauthorized attempts (`[401]` / `[403]`) to `backend/logs/error.logs`.
+- **Dynamic Role-Based Navigation (`backend/src/components/headerMenu.js`)** — single shared header component adhering to `design.md` that dynamically adapts menu items to authentication status and user role (`guest`, `admin`, `alumni`, `student`, `coordinator`, `employer`) across all pages.
+- **Admin Panel (`/admin`)** — role-protected administration dashboard for assigning user roles (`admin`, `alumni`, `student`, `coordinator`, `employer`), managing account status, and manipulating departments, announcements, job postings, and applications.
 - **Academic Departments** — manage faculties and academic departments linked to students and job opportunities.
 - **Event Announcements** — publish, view, and organize alumni events and campus announcements.
 - **Event Registrations** — RSVP and track event attendance with attendee status (registered, attended, cancelled).
@@ -50,24 +55,32 @@ alumni/
 │   │   ├── 004_create_events.sql
 │   │   ├── 005_create_event_registrations.sql
 │   │   ├── 006_create_job_postings.sql
-│   │   └── 007_create_applications.sql
+│   │   ├── 007_create_applications.sql
+│   │   ├── 008_add_role_and_is_active_to_users.sql
+│   │   ├── 009_add_password_hash_to_users.sql
+│   │   └── 010_add_phone_and_linkedin_to_users.sql
 │   ├── seeds/                       # Database seeder and factory generators
 │   │   ├── factories.js             # Entity factories (Department, User, JobPosting, etc.)
 │   │   └── index.js                 # Database seeder script (npm run seed)
 │   ├── src/
+│   │   ├── components/              # Shared UI components used across all SSR views
+│   │   │   ├── headerMenu.js        # Single shared dynamic role-based header navigation menu
+│   │   │   └── index.js
 │   │   ├── config/                  # Database pool, migrations runner, and Swagger config
 │   │   │   ├── db.js
 │   │   │   ├── migrate.js
 │   │   │   └── swagger.js
 │   │   ├── controllers/             # MVC Web & REST API controllers
 │   │   │   ├── homeController.js    # Home, health, utility & generic /404 page handler
+│   │   │   ├── adminController.js   # Admin panel (/admin) & full data/RBAC manipulation
 │   │   │   ├── userController.js & apiUserController.js
 │   │   │   ├── announcementController.js & apiAnnouncementController.js
 │   │   │   ├── jobPostingController.js & apiJobPostingController.js
 │   │   │   ├── applicationController.js & apiApplicationController.js
 │   │   │   ├── apiDepartmentController.js
 │   │   │   └── apiEventController.js
-│   │   ├── middlewares/             # Express request/error guardian middlewares
+│   │   ├── middlewares/             # Express request/error/auth guardian middlewares
+│   │   │   ├── authMiddleware.js    # Auth (401 -> /login or JSON) & Admin (403) guardian + error.logs
 │   │   │   ├── logger.js            # Single-line request logger (HH:MM:SS METHOD ROUTE STATUS ms)
 │   │   │   ├── notFoundGuardian.js  # 404 detection, error.logs recording & /404 redirect
 │   │   │   └── serverErrorGuardian.js # 5xx error catcher, stack trace logging & JSON response
@@ -81,7 +94,8 @@ alumni/
 │   │   │   ├── jobPostingModel.js
 │   │   │   └── applicationModel.js
 │   │   ├── routes/                  # Modular Web & REST API routes
-│   │   │   ├── index.js             # Main router (including GET /404)
+│   │   │   ├── index.js             # Main router (including /login, /register, /logout, /admin, /404)
+│   │   │   ├── adminRoutes.js       # Admin panel & data manipulation routes
 │   │   │   ├── userRoutes.js & apiUserRoutes.js
 │   │   │   ├── announcementRoutes.js & apiAnnouncementRoutes.js
 │   │   │   ├── jobPostingRoutes.js & apiJobPostingRoutes.js
@@ -90,9 +104,17 @@ alumni/
 │   │   │   ├── apiEventRoutes.js
 │   │   │   └── apiEventRegistrationRoutes.js
 │   │   ├── utils/                   # Shared backend utilities
-│   │   │   └── errorLogger.js       # Auto-creates logs/ and writes error.logs + console.error
+│   │   │   ├── errorLogger.js       # Auto-creates logs/ and writes error.logs + console.error
+│   │   │   ├── password.js          # Cryptographic password hashing and timing-safe verification (scrypt)
+│   │   │   └── sessionContext.js    # Request-scoped session context (AsyncLocalStorage) for SSR views
 │   │   ├── views/                   # Server-side HTML View templates
 │   │   │   ├── index.js             # Central view exports
+│   │   │   ├── layout.js            # Base layout wrapper using shared components/headerMenu.js
+│   │   │   ├── homeView.js          # Home landing page using shared components/headerMenu.js
+│   │   │   ├── registerView.js      # Dedicated registration form with role & scrypt password fields
+│   │   │   ├── loginView.js         # Dedicated login form (/login)
+│   │   │   ├── profileView.js       # User-specific profile (/profile) & settings/password change (/settings)
+│   │   │   ├── adminView.js         # Admin panel dashboard (/admin) for RBAC & data manipulation
 │   │   │   ├── userView.js
 │   │   │   ├── announcementView.js
 │   │   │   ├── jobPostingView.js
@@ -210,16 +232,36 @@ Verinin saklanması, iş kurallarına göre modellenmesi, sorgulanması ve manip
     - `UserModel.getJobPostings(id)` & `UserModel.getApplications(id)` & `UserModel.getAppliedJobs(id)`.
 - **Merkezi İlişki Haritası ([`models/index.js`](backend/src/models/index.js)):** Tüm modelleri tek noktadan dışa aktarır ve tablolar arası ilişki meta verilerini (`hasMany`, `belongsTo`, `belongsToMany`) tanımlar.
 
-### 4. 👁️ View Katmanı (`backend/src/views/`)
+### 4. 👁️ View & Ortak Bileşen Katmanı (`backend/src/views/` & `backend/src/components/`)
 Kullanıcıya veya istemciye sunulan çıktının oluşturulduğu bağımsız sunucu taraflı şablonlama (SSR) katmandır:
+- **[`components/headerMenu.js`](backend/src/components/headerMenu.js) (Tekil Dinamik Navigasyon Bileşeni):** Tüm sayfalarda (`layout.js`, `homeView.js` ve tüm alt görünümlerde) kullanılan, `design.md` uyumlu tek ortak header ve menü bileşenidir. Giriş durumuna ve kullanıcının rolüne göre menü öğelerini dinamik olarak oluşturur:
+
+  | Kullanıcı Durumu / Rolü | Ortak Menü Öğeleri | Role Özel Ek Menü Öğeleri | Kişisel Hesap & Oturum Alanı |
+  |---|---|---|---|
+  | **Misafir (Giriş Yapmamış)** | `Ana Sayfa` (`/`) | *(Yok — korunan sayfalar gizlenir)* | `Giriş` (`/login`), `+ Kayıt` (`/register`) |
+  | **`admin` (Sistem Yöneticisi)** | `Ana Sayfa`, `Mezunlar`, `Duyurular`, `İş İlanları` | `Başvurular` (`/applications`), `🛡️ Admin Panel` (`/admin`) | `Profil` (`/profile`), `Ayarlar` (`/settings`), `👤 Ad Soyad (Admin)` + `Çıkış` (`POST /logout`) |
+  | **`alumni` (Mezun)** | `Ana Sayfa`, `Mezunlar`, `Duyurular`, `İş İlanları` | `Başvurularım` (`/applications`), `➕ İlan Paylaş` (`/job-postings#new-job-form`) | `Profil` (`/profile`), `Ayarlar` (`/settings`), `👤 Ad Soyad (Mezun)` + `Çıkış` (`POST /logout`) |
+  | **`student` (Öğrenci)** | `Ana Sayfa`, `Mezunlar`, `Duyurular`, `İş İlanları` | `Staj ve Başvurularım` (`/applications`) | `Profil` (`/profile`), `Ayarlar` (`/settings`), `👤 Ad Soyad (Öğrenci)` + `Çıkış` (`POST /logout`) |
+  | **`coordinator` (Bölüm Koordinatörü)** | `Ana Sayfa`, `Mezunlar`, `Duyurular`, `İş İlanları` | `📢 Duyuru Yayınla` (`/announcements#new-announcement-form`) | `Profil` (`/profile`), `Ayarlar` (`/settings`), `👤 Ad Soyad (Koordinatör)` + `Çıkış` (`POST /logout`) |
+  | **`employer` (İşveren / İK)** | `Ana Sayfa`, `Mezunlar`, `Duyurular`, `İş İlanları` | `➕ İlan Yayınla` (`/job-postings#new-job-form`), `Aday Başvuruları` (`/applications`) | `Profil` (`/profile`), `Ayarlar` (`/settings`), `👤 Ad Soyad (İşveren)` + `Çıkış` (`POST /logout`) |
+
+- **[`profileView.js`](backend/src/views/profileView.js):** Giriş yapmış kullanıcının kendi kişisel profil (`/profile`) ve hesap ayarları / şifre değiştirme (`/settings`) sayfaları.
+
+- **[`loginView.js`](backend/src/views/loginView.js) & [`registerView.js`](backend/src/views/registerView.js):** Kullanıcı giriş (`/login`) ve rol seçimli kayıt (`/register`) sayfaları.
+- **[`adminView.js`](backend/src/views/adminView.js):** Kullanıcı rolleri (RBAC), bölümler, duyurular, iş ilanları ve başvurular için merkezi yönetim paneli (`/admin`).
 - **[`userView.js`](backend/src/views/userView.js):** Mezunlar listesi, profili, düzenleme ve 404 sayfaları.
 - **[`announcementView.js`](backend/src/views/announcementView.js):** Duyurular paneli, detay, düzenleme ve 404 sayfaları.
 - **[`jobPostingView.js`](backend/src/views/jobPostingView.js):** İş ilanları listesi, yeni ilan formu, zengin ilan detay kartı (başvuran adaylar listesiyle) ve düzenleme formu.
 - **[`applicationView.js`](backend/src/views/applicationView.js):** İş başvuruları takip paneli, dinamik ilan/aday seçimli başvuru yapma formu, başvuru detay kartı ve durum güncelleme formu.
 - **[`notFoundView.js`](backend/src/views/notFoundView.js):** Geçersiz rotalardan yönlendirilen istekler için `escapeHtml` XSS korumalı generic `404 Not Found` HTML hata sayfası (`renderNotFoundPage`).
 
-### 5. 🛡️ Middleware, Hata Yönetimi ve Loglama Katmanı (`backend/src/middlewares/` & `backend/src/utils/`)
-Uygulama yaşam döngüsündeki tüm istekleri izlemek, yakalanmayan rotaları güvenli biçimde yönetmek ve hataları kalıcı olarak kaydetmek için [`backend/src/index.js`](backend/src/index.js) içinde sıralı middleware zinciri tanımlanmıştır:
+### 5. 🛡️ Middleware, Kimlik Doğrulama, Hata Yönetimi ve Loglama Katmanı (`backend/src/middlewares/` & `backend/src/utils/`)
+Uygulama yaşam döngüsündeki tüm istekleri izlemek, menüde gizlenen sayfaların erişim kontrolünü sunucu düzeyinde korumak, yakalanmayan rotaları güvenli biçimde yönetmek ve hataları kalıcı olarak kaydetmek için [`backend/src/index.js`](backend/src/index.js) içinde sıralı middleware zinciri tanımlanmıştır:
+
+- **Auth & Admin Guardian ([`authMiddleware.js`](backend/src/middlewares/authMiddleware.js)):**
+  - Menüde gizlenen korunan sayfalara (`/users`, `/announcements`, `/job-postings`, `/applications`, `/admin` ve `/api/*`) doğrudan URL ile erişilmeye çalışıldığında devreye girer.
+  - Giriş yapmamış kullanıcıları web isteklerinde `/login` sayfasına yönlendirir, API isteklerinde `401 Unauthorized` JSON yanıtı döner ve denemeyi `[401]` etiketiyle `backend/logs/error.logs` dosyasına yazar.
+  - `requireAdmin` middleware'i `/admin` rotalarını korur; `admin` rolünde olmayan kullanıcıların erişim denemelerini `[403]` etiketiyle `backend/logs/error.logs` dosyasına kaydeder ve `403 Forbidden` döner.
 
 - **Request Logger ([`logger.js`](backend/src/middlewares/logger.js)):**
   - Her HTTP isteği tamamlandığında terminale tek satırlık özet log basar (`HH:MM:SS METOD ROUTE DURUM_KODU SÜRE`).
@@ -243,6 +285,35 @@ Uygulama yaşam döngüsündeki tüm istekleri izlemek, yakalanmayan rotaları g
 
 ---
 
+## 🔐 Authentication, Session Management & RBAC
+
+Sistemde uçtan uca güvenli kimlik doğrulama, cookie tabanlı oturum yönetimi ve 5 farklı kullanıcı rolüne (`admin`, `alumni`, `student`, `coordinator`, `employer`) dayalı yetkilendirme (RBAC) mimarisi yer almaktadır:
+
+### 1. Kayıt (`/register`) ve Kriptografik Parola Saklama (`crypto.scrypt`)
+- **Parola Doğrulama:** Kayıt formunda (`GET /register`, `POST /register`) şifre ve şifre tekrarı alanları zorunludur; şifre en az **8 karakter** olmalı ve iki alan birebir eşleşmelidir.
+- **Güvenli Hash'leme ([`backend/src/utils/password.js`](backend/src/utils/password.js)):** Parolalar asla düz metin (plaintext) olarak saklanmaz. Node.js'in yerleşik `crypto.scrypt` fonksiyonu ile 16-byte (128-bit) kriptografik rastgele tuz (`salt`) ve 64-byte (512-bit) türetilmiş anahtar üretilerek `${salt}:${derivedKey}` formatında `users.password_hash` sütununa kaydedilir.
+- **Sızdırmazlık:** `password` ve `password_hash` alanları hiçbir API cevabında (`/api/users` dahil), hata mesajında, URL parametresinde veya sunucu loglarında yer almaz.
+
+### 2. Giriş (`/login`), Çıkış (`POST /logout`) ve Cookie Tabanlı Oturum (`express-session`)
+- **Session Yapılandırması:** Oturumlar `express-session` ile `httpOnly: true`, `sameSite: 'lax'` özellikli `iu_alumni.sid` çerezi üzerinden yönetilir. Oturum anahtarı `.env` ve `.env.example` dosyalarında `SESSION_SECRET` değişkeni ile tanımlanmıştır.
+- **Parola Kontrolü ve Genel Hata Mesajı:** `POST /login` isteğinde parola kontrolü kayıt aşamasındaki aynı `crypto.scrypt` yöntemi (`verifyPassword` + `crypto.timingSafeEqual`) ile yapılır. Hatalı girişlerde e-postanın mı yoksa şifrenin mi yanlış olduğunu açık etmeyen genel **`"E-posta adresi veya şifre hatalı."`** mesajı dönülür.
+- **Oturum Sonlandırma (`POST /logout`):** `req.session.destroy()` ile sunucu oturumunu sonlandırır ve oturum çerezini temizler.
+
+### 3. Kullanıcıya Özel Sayfalar (`/profile`, `/settings`, Kişiselleştirilmiş `/`)
+- **`/profile` (Kişisel Profil Sayfası):** Giriş yapmış kullanıcının kendi bilgilerini (Ad Soyad, E-Posta, Sistem Rolü, Bölüm, Mezuniyet Yılı, Telefon, LinkedIn) ve aktivite özetini gösterir.
+- **`/settings` (Kişisel Ayarlar & Şifre Değiştirme):**
+  - Kullanıcı yalnızca kendi profil bilgilerini güncelleyebilir; işlemler URL'deki `id` parametresine göre değil doğrudan oturumdaki kullanıcıya (`req.session.user.id`) göre yapılır ve kullanıcı kendi rolünü değiştiremez.
+  - Bilgi güncellemesi sonrasında oturum ve Header menüsündeki kullanıcı adı anında güncellenir.
+  - Şifre değiştirme (`POST /settings/password`) işleminde mevcut şifre doğrulanır ve yeni şifrenin en az 8 karakter olması zorunludur.
+- **Kişiselleştirilmiş Ana Sayfa (`/`):** Giriş yapmış kullanıcıyı adıyla karşılar, rolüne uygun hızlı kısayollar gösterir ve kullanıcının kendi verilerinden özetler (*Başvurularım Özeti*, *Paylaştığım İlanlar*, *Hesap & Profil Özetim*) sunar. Giriş yapmamış ziyaretçiler için kurumsal karşılama sayfası korunur.
+- **Başvurular (`/applications`) Kişisel Filtreleme:** `alumni` (Mezun) ve `student` (Öğrenci) rolündeki kullanıcılar `/applications` sayfasında yalnızca kendi başvurularını görür ve yönetir.
+
+### 4. Auth & Admin Middleware ve Yönetim Paneli (`/admin`)
+- **`authMiddleware` ([`backend/src/middlewares/authMiddleware.js`](backend/src/middlewares/authMiddleware.js)):** Giriş yapmamış kullanıcıların korunan web sayfalarına erişimini `/login` sayfasına yönlendirir, API isteklerinde `401 Unauthorized` JSON döner ve tüm yetkisiz denemeleri `[401]` koduyla `backend/logs/error.logs` dosyasına kaydeder.
+- **`requireAdmin` & `/admin` Paneli:** Yalnızca `admin` rolündeki kullanıcıların `/admin` yönetim paneline erişmesine izin verir (`403 Forbidden` + `[403]` `error.logs` kaydı). Admin paneli üzerinden tüm kullanıcı rolleri (`admin`, `alumni`, `student`, `coordinator`, `employer`), bölümler, duyurular, iş ilanları ve başvurular yönetilebilir.
+
+---
+
 ## 🗄️ Database, Migrations, Seeds & Domain Rules
 
 Veritabanı tasarımı [ddd.md](ddd.md) dosyasındaki şemaya dayanmaktadır.
@@ -256,6 +327,9 @@ Uygulama açılışında ([`backend/src/config/migrate.js`](backend/src/config/m
 5. `005_create_event_registrations.sql` — Etkinlik kayıt ara tablosu (`UNIQUE(event_id, user_id)`).
 6. `006_create_job_postings.sql` — Kariyer ve iş fırsatları tablosu (`posted_by`, `department_id` FK).
 7. `007_create_applications.sql` — İş başvuruları ara tablosu (`UNIQUE(job_posting_id, user_id)`, `CASCADE`).
+8. `008_add_role_and_is_active_to_users.sql` — Kullanıcı rolleri (`admin`, `alumni`, `student`, `coordinator`, `employer`) ve hesap aktiflik (`is_active`) sütunları.
+9. `009_add_password_hash_to_users.sql` — Güvenli parola saklama için `password_hash VARCHAR(255) NULL` sütunu.
+10. `010_add_phone_and_linkedin_to_users.sql` — Kullanıcı profili ve ayarları için `phone VARCHAR(50) NULL` ve `linkedin_url VARCHAR(500) NULL` sütunları.
 
 ### 2. Factory ve Seed Altyapısı (`backend/seeds/`)
 - **Factory Üreticileri ([`factories.js`](backend/seeds/factories.js)):** `departmentFactory`, `userFactory`, `announcementFactory`, `eventFactory`, `eventRegistrationFactory`, `jobPostingFactory`.
@@ -310,7 +384,12 @@ Konteynerler ayağa kalktıktan sonra tarayıcınızdan aşağıdaki adreslere e
 
 | Sayfa | URL | Açıklama |
 |---|---|---|
-| **Ana Sayfa** | [http://localhost:3000/](http://localhost:3000/) | Karşılama ve yönlendirme sayfası |
+| **Ana Sayfa** | [http://localhost:3000/](http://localhost:3000/) | Karşılama ve giriş yapmış kullanıcıya özel özet sayfası |
+| **Giriş Yap (Login)** | [http://localhost:3000/login](http://localhost:3000/login) | E-posta ve şifre ile oturum açma sayfası |
+| **Üyelik & Mezun Kaydı** | [http://localhost:3000/register](http://localhost:3000/register) | Rol seçimi ve şifreleme destekli kayıt sayfası |
+| **Profilim (Profile)** | [http://localhost:3000/profile](http://localhost:3000/profile) | Giriş yapmış kullanıcının kişisel profil sayfası |
+| **Ayarlar (Settings)** | [http://localhost:3000/settings](http://localhost:3000/settings) | Kişisel bilgi güncelleme ve şifre değiştirme sayfası |
+| **Yönetim Paneli (Admin)** | [http://localhost:3000/admin](http://localhost:3000/admin) | `admin` rolüne özel kullanıcı/rol ve veri yönetim paneli |
 | **Mezunlar** | [http://localhost:3000/users](http://localhost:3000/users) | Mezun profilleri ve ekleme formu |
 | **Duyurular** | [http://localhost:3000/announcements](http://localhost:3000/announcements) | Kampüs duyuruları paneli |
 | **İş İlanları** | [http://localhost:3000/job-postings](http://localhost:3000/job-postings) | Kariyer fırsatları ve ilan yayınlama |

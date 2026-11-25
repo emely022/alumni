@@ -13,11 +13,253 @@
  *   Alumni Profile (Öne Çıkan Mezun Profilleri).
  */
 
+const { renderHeaderMenu } = require('../components/headerMenu');
+const { getCurrentUser } = require('../utils/sessionContext');
+const { escapeHtml } = require('./layout');
+
+const ROLE_SHORTCUTS = {
+  admin: {
+    label: 'Sistem Yöneticisi (Admin)',
+    shortcuts: [
+      { icon: '🛡️', title: 'Admin Panel', href: '/admin', primary: true },
+      { icon: '📝', title: 'Tüm Başvurular', href: '/applications' },
+      { icon: '👥', title: 'Kullanıcı & Rol Yönetimi', href: '/admin#admin-users' },
+      { icon: '📢', title: 'Duyuru Yayınla', href: '/admin#admin-announcements' },
+      { icon: '👤', title: 'Profilim', href: '/profile' },
+      { icon: '⚙️', title: 'Ayarlar & Şifre', href: '/settings' },
+    ],
+  },
+  alumni: {
+    label: 'Mezun (Alumni)',
+    shortcuts: [
+      { icon: '📝', title: 'Başvurularım', href: '/applications', primary: true },
+      { icon: '➕', title: 'İş / Staj İlanı Paylaş', href: '/job-postings#new-job-form' },
+      { icon: '💼', title: 'Kariyer İlanları', href: '/job-postings' },
+      { icon: '🎓', title: 'Mezunlar Dizini', href: '/users' },
+      { icon: '👤', title: 'Profilim', href: '/profile' },
+      { icon: '⚙️', title: 'Ayarlar & Şifre', href: '/settings' },
+    ],
+  },
+  student: {
+    label: 'Öğrenci (Student)',
+    shortcuts: [
+      { icon: '📝', title: 'Staj ve Başvurularım', href: '/applications', primary: true },
+      { icon: '💼', title: 'Açık İş & Staj İlanları', href: '/job-postings' },
+      { icon: '🎓', title: 'Mezun Mentörler', href: '/users' },
+      { icon: '📢', title: 'Kampüs Duyuruları', href: '/announcements' },
+      { icon: '👤', title: 'Profilim', href: '/profile' },
+      { icon: '⚙️', title: 'Ayarlar & Şifre', href: '/settings' },
+    ],
+  },
+  coordinator: {
+    label: 'Bölüm Koordinatörü',
+    shortcuts: [
+      { icon: '📢', title: 'Yeni Duyuru Yayınla', href: '/announcements#new-announcement-form', primary: true },
+      { icon: '🎓', title: 'Bölüm Mezunları', href: '/users' },
+      { icon: '📰', title: 'Tüm Duyurular', href: '/announcements' },
+      { icon: '💼', title: 'Kariyer İlanları', href: '/job-postings' },
+      { icon: '👤', title: 'Profilim', href: '/profile' },
+      { icon: '⚙️', title: 'Ayarlar & Şifre', href: '/settings' },
+    ],
+  },
+  employer: {
+    label: 'İşveren / İK Temsilcisi',
+    shortcuts: [
+      { icon: '➕', title: 'Yeni İlan Yayınla', href: '/job-postings#new-job-form', primary: true },
+      { icon: '📝', title: 'Gelen Aday Başvuruları', href: '/applications' },
+      { icon: '💼', title: 'İlanlarım & Kariyer', href: '/job-postings' },
+      { icon: '🎓', title: 'Mezun Aday Havuzu', href: '/users' },
+      { icon: '👤', title: 'Profilim', href: '/profile' },
+      { icon: '⚙️', title: 'Ayarlar & Şifre', href: '/settings' },
+    ],
+  },
+};
+
+const buildPersonalizedHeroAndSummary = (activeUser, dashboard = {}) => {
+  const roleKey = String(activeUser.role || 'alumni').toLowerCase();
+  const roleConfig = ROLE_SHORTCUTS[roleKey] || ROLE_SHORTCUTS.alumni;
+  const myAppliedJobs = Array.isArray(dashboard.myAppliedJobs) ? dashboard.myAppliedJobs : [];
+  const myJobPostings = Array.isArray(dashboard.myJobPostings) ? dashboard.myJobPostings : [];
+  const myAnnouncements = Array.isArray(dashboard.myAnnouncements) ? dashboard.myAnnouncements : [];
+
+  const shortcutsHtml = roleConfig.shortcuts
+    .map(
+      (sc) => `
+        <a href="${escapeHtml(sc.href)}" class="${sc.primary ? 'btn-primary' : 'btn-ghost-white'}" style="padding: 11px 22px; font-size: 14px;">
+          <span>${sc.icon}</span>
+          <span>${escapeHtml(sc.title)}</span>
+        </a>
+      `
+    )
+    .join('');
+
+  const appliedListHtml =
+    myAppliedJobs.length === 0
+      ? `<p style="color: #6B7280; font-size: 14px; margin-bottom: 14px;">Henüz bir iş veya staj ilanına başvurunuz bulunmuyor.</p>`
+      : `<div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+          ${myAppliedJobs
+            .slice(0, 4)
+            .map(
+              (item) => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #F9FAFB; border-radius: 10px; border: 1px solid #E5E7EB; gap: 8px;">
+                  <div>
+                    <div style="font-weight: 700; color: #111827; font-size: 14px;">${escapeHtml(item.title || 'İş İlanı')}</div>
+                    <div style="font-size: 12px; color: #6B7280;">${escapeHtml(item.company || '')}</div>
+                  </div>
+                  <span style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 100px; background: #FEF3C7; color: #92400E;">
+                    ${escapeHtml(item.applicationStatus || item.status || 'pending')}
+                  </span>
+                </div>
+              `
+            )
+            .join('')}
+        </div>`;
+
+  const postedJobsHtml =
+    myJobPostings.length === 0
+      ? `<p style="color: #6B7280; font-size: 14px; margin-bottom: 14px;">Henüz paylaştığınız bir iş veya staj ilanı bulunmuyor.</p>`
+      : `<div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+          ${myJobPostings
+            .slice(0, 4)
+            .map(
+              (job) => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #F9FAFB; border-radius: 10px; border: 1px solid #E5E7EB; gap: 8px;">
+                  <div>
+                    <div style="font-weight: 700; color: #111827; font-size: 14px;">${escapeHtml(job.title)}</div>
+                    <div style="font-size: 12px; color: #6B7280;">${escapeHtml(job.company || '')} &bull; ${escapeHtml(job.location || '')}</div>
+                  </div>
+                  <span style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 100px; background: ${job.isActive !== false ? '#D1FAE5' : '#FEE2E2'}; color: ${job.isActive !== false ? '#065F46' : '#991B1B'};">
+                    ${job.isActive !== false ? 'Yayında' : 'Kapalı'}
+                  </span>
+                </div>
+              `
+            )
+            .join('')}
+        </div>`;
+
+  return `
+  <!-- 3. KULLANICIYA ÖZEL KARŞILAMA VE HIZLI KISAYOLLAR (GİRİŞ YAPMIŞ KULLANICI) -->
+  <section class="hero" style="padding: 48px 24px 36px;">
+    <div class="hero-container">
+      <div class="hero-pill-badge">
+        <span>👋</span> Kişisel Mezun &amp; Kariyer Portalınız • Rol: ${escapeHtml(roleConfig.label)}
+      </div>
+      <h2 class="hero-title" style="font-size: 40px; margin-bottom: 14px;">
+        Hoş Geldiniz, <span>${escapeHtml(activeUser.name)}</span>!
+      </h2>
+      <p class="hero-subtext" style="margin-bottom: 24px;">
+        İstanbul Üniversitesi <strong>${escapeHtml(activeUser.department || 'Mezunlar Ağı')}</strong> (${escapeHtml(activeUser.graduationYear || 'İÜ')}) hesabınızla oturum açtınız. Rolünüze özel hızlı kısayollar ve kişisel veri özetiniz aşağıda yer almaktadır.
+      </p>
+
+      <!-- Rolüne Uygun Kısayollar -->
+      <div class="hero-ctas" style="gap: 10px;">
+        ${shortcutsHtml}
+      </div>
+    </div>
+  </section>
+
+  <!-- KULLANICININ KENDİ VERİLERİNDEN ÖZET PANELİ (BAŞVURULARIM, PAYLAŞTIĞIM İLANLAR, PROFİLİM) -->
+  <section style="max-width: 1240px; margin: 0 auto 36px; padding: 0 24px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 22px;">
+      
+      <!-- Kart 1: Başvurularım Özeti -->
+      <div style="background: #FFFFFF; color: #111827; border-radius: 18px; padding: 26px; box-shadow: 0 10px 28px rgba(10, 26, 20, 0.28); border: 2px solid #F5BA13;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <h3 style="font-size: 18px; font-weight: 700; color: #111827;">📝 Başvurularım Özeti</h3>
+          <span style="background: #214539; color: #F5BA13; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 100px;">
+            Toplam: ${myAppliedJobs.length}
+          </span>
+        </div>
+        ${appliedListHtml}
+        <a href="/applications" class="btn-primary" style="padding: 9px 20px; font-size: 13px; width: 100%;">
+          Tüm Başvurularımı Görüntüle →
+        </a>
+      </div>
+
+      <!-- Kart 2: Paylaştığım İlanlar Özeti -->
+      <div style="background: #FFFFFF; color: #111827; border-radius: 18px; padding: 26px; box-shadow: 0 10px 28px rgba(10, 26, 20, 0.28);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <h3 style="font-size: 18px; font-weight: 700; color: #111827;">💼 Paylaştığım İlanlar</h3>
+          <span style="background: #FEF3C7; color: #92400E; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 100px;">
+            Toplam: ${myJobPostings.length}
+          </span>
+        </div>
+        ${postedJobsHtml}
+        <a href="/job-postings#new-job-form" class="btn-primary" style="padding: 9px 20px; font-size: 13px; width: 100%;">
+          + Yeni İş / Staj İlanı Paylaş
+        </a>
+      </div>
+
+      <!-- Kart 3: Kişisel Profil & Hesap Özetim -->
+      <div style="background: #FFFFFF; color: #111827; border-radius: 18px; padding: 26px; box-shadow: 0 10px 28px rgba(10, 26, 20, 0.28);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <h3 style="font-size: 18px; font-weight: 700; color: #111827;">👤 Hesap &amp; Profil Özetim</h3>
+          <span style="background: #ECFDF5; color: #065F46; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 100px;">
+            ${escapeHtml(roleKey.toUpperCase())}
+          </span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #374151; margin-bottom: 16px;">
+          <div><strong>Ad Soyad:</strong> ${escapeHtml(activeUser.name)}</div>
+          <div><strong>E-Posta:</strong> ${escapeHtml(activeUser.email)}</div>
+          <div><strong>Bölüm:</strong> ${escapeHtml(activeUser.department || 'Belirtilmedi')} (${escapeHtml(activeUser.graduationYear || '-')})</div>
+          <div><strong>Telefon:</strong> ${escapeHtml(activeUser.phone || 'Belirtilmedi')}</div>
+          <div><strong>Duyurularım:</strong> ${myAnnouncements.length} adet</div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <a href="/profile" class="btn-primary" style="padding: 9px 16px; font-size: 13px; flex: 1;">👤 Profilim</a>
+          <a href="/settings" class="btn-primary" style="padding: 9px 16px; font-size: 13px; flex: 1; background: #E5E7EB; color: #111827; box-shadow: none;">⚙️ Ayarlar</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+  `;
+};
+
 const renderHomePage = (stats = {}) => {
   const usersCount = stats.usersCount ?? 450000;
   const jobsCount = stats.jobPostingsCount ?? 120;
   const announcementsCount = stats.announcementsCount ?? 48;
   const departmentsCount = stats.departmentsCount ?? 17;
+  const activeUser = stats.currentUser !== undefined ? stats.currentUser : getCurrentUser();
+  const headerHtml = renderHeaderMenu({
+    activeNav: 'home',
+    currentUser: activeUser,
+  });
+
+  const guestHeroHtml = `
+  <!-- 3. HERO SECTION -->
+  <section class="hero">
+    <div class="hero-container">
+      <div class="hero-pill-badge">
+        <span>🏛️</span> 1453'ten Günümüze • 570+ Yıllık Köklü Miras
+      </div>
+      <h2 class="hero-title">
+        Tarihten Geleceğe Bilim Köprüsü: <span>İÜ Mezun Ailesi</span>
+      </h2>
+      <p class="hero-subtext">
+        Türkiye'nin en köklü üniversitesinin yarım milyona yaklaşan mezun ailesi tek dijital çatı altında buluşuyor.
+        Dönem arkadaşlarınızla iletişime geçin, kariyer fırsatlarını yakalayın ve İÜ dayanışmasını geleceğe taşıyın.
+      </p>
+
+      <div class="hero-ctas">
+        <a href="#alumni-list" class="btn-primary">
+          <span>🎓</span> Mezunları Keşfet
+        </a>
+        <a href="#product-page" class="btn-ghost-white">
+          <span>📦</span> Ürün & Hizmetler
+        </a>
+        <a href="/job-postings" class="btn-ghost-white">
+          <span>💼</span> Kariyer İlanları
+        </a>
+      </div>
+    </div>
+  </section>`;
+
+  const heroSectionHtml =
+    activeUser && activeUser.name
+      ? buildPersonalizedHeroAndSummary(activeUser, stats.userDashboard || {})
+      : guestHeroHtml;
 
   return `<!DOCTYPE html>
 <html lang="tr">
@@ -163,53 +405,66 @@ const renderHomePage = (stats = {}) => {
       object-fit: contain;
       flex-shrink: 0;
     }
-    .brand-meta h1 {
-      font-size: 19px;
+    .brand-meta h1, .brand-name {
+      font-size: 17px;
       font-weight: 700;
       color: var(--color-paper-white);
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
       line-height: 1.2;
     }
-    .brand-meta p {
-      font-size: 12px;
+    .brand-texts {
+      display: flex;
+      flex-direction: column;
+    }
+    .brand-meta p, .brand-sub {
+      font-size: 11px;
       color: var(--color-action-yellow);
-      font-weight: 600;
-      letter-spacing: 0.8px;
+      font-weight: 700;
+      letter-spacing: 1px;
       text-transform: uppercase;
+      margin-top: 2px;
     }
 
     .nav-menu {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       flex-wrap: wrap;
     }
     .nav-item {
       padding: 8px 14px;
       font-size: 14px;
-      font-weight: 500;
+      font-weight: 600;
       border-radius: var(--radius-full);
-      color: var(--color-paper-white);
+      color: var(--color-white-muted);
       transition: all 0.2s ease;
+      white-space: nowrap;
     }
-    .nav-item:hover, .nav-item.active {
-      background-color: rgba(255, 255, 255, 0.12);
+    .nav-item:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: var(--color-paper-white);
+    }
+    .nav-item.active {
+      background-color: rgba(245, 186, 19, 0.15);
       color: var(--color-action-yellow);
+      border: 1px solid rgba(245, 186, 19, 0.3);
     }
-    .btn-header-cta {
+    .btn-header-cta, .nav-cta {
       background-color: var(--color-action-yellow);
       color: var(--color-text-black);
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 700;
       padding: 9px 20px;
       border-radius: var(--radius-full);
       box-shadow: var(--shadow-button);
       transition: all 0.2s ease;
-      margin-left: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
-    .btn-header-cta:hover {
+    .btn-header-cta:hover, .nav-cta:hover {
       background-color: var(--color-yellow-hover);
-      transform: translateY(-2px);
+      transform: translateY(-1px);
       box-shadow: var(--shadow-button-hover);
     }
 
@@ -802,74 +1057,8 @@ const renderHomePage = (stats = {}) => {
   </style>
 </head>
 <body>
-
-  <!-- 1. TOP ANNOUNCEMENT BAR -->
-  <div class="top-bar">
-    <div class="top-bar-title">
-      <span>🏛️</span>
-      <span><strong>T.C. İSTANBUL ÜNİVERSİTESİ</strong> • 1453'TEN GELECEĞE BİLİM KÖPRÜSÜ</span>
-    </div>
-    <div class="top-bar-links">
-      <a href="https://www.istanbul.edu.tr" target="_blank" rel="noopener">Resmi Web Sitesi</a>
-      <a href="/about">Proje Hakkında</a>
-      <a href="/api/swagger">OpenAPI / Swagger</a>
-    </div>
-  </div>
-
-  <!-- 2. HEADER & MENU & LOGO -->
-  <header class="header">
-    <div class="header-inner">
-      <a href="/" class="brand-link">
-        <!-- Kullanıcının yüklediği /istanbul-universitesi-logo.png dosyası -->
-        <img src="/istanbul-universitesi-logo.png" alt="İstanbul Üniversitesi Logo" class="brand-logo-img" onerror="this.style.display='none'">
-        <div class="brand-meta">
-          <h1>İSTANBUL ÜNİVERSİTESİ</h1>
-          <p>Mezun Bilgi Sistemi • İÜ Mezun</p>
-        </div>
-      </a>
-
-      <!-- MENU -->
-      <nav class="nav-menu">
-        <a href="/" class="nav-item active">Ana Sayfa</a>
-        <a href="#alumni-list" class="nav-item">Mezunlar Listesi</a>
-        <a href="#alumni-profiles" class="nav-item">Mezun Profilleri</a>
-        <a href="#product-page" class="nav-item">Ürünler & Hizmetler</a>
-        <a href="/job-postings" class="nav-item">İş İlanları</a>
-        <a href="/announcements" class="nav-item">Duyurular</a>
-        <a href="/applications" class="nav-item">Başvurular</a>
-        <a href="/api/swagger" class="nav-item">Swagger API</a>
-        <a href="/users" class="btn-header-cta">+ Mezun Kaydı</a>
-      </nav>
-    </div>
-  </header>
-
-  <!-- 3. HERO SECTION -->
-  <section class="hero">
-    <div class="hero-container">
-      <div class="hero-pill-badge">
-        <span>🏛️</span> 1453'ten Günümüze • 570+ Yıllık Köklü Miras
-      </div>
-      <h2 class="hero-title">
-        Tarihten Geleceğe Bilim Köprüsü: <span>İÜ Mezun Ailesi</span>
-      </h2>
-      <p class="hero-subtext">
-        Türkiye'nin en köklü üniversitesinin yarım milyona yaklaşan mezun ailesi tek dijital çatı altında buluşuyor.
-        Dönem arkadaşlarınızla iletişime geçin, kariyer fırsatlarını yakalayın ve İÜ dayanışmasını geleceğe taşıyın.
-      </p>
-
-      <div class="hero-ctas">
-        <a href="#alumni-list" class="btn-primary">
-          <span>🎓</span> Mezunları Keşfet
-        </a>
-        <a href="#product-page" class="btn-ghost-white">
-          <span>📦</span> Ürün & Hizmetler
-        </a>
-        <a href="/job-postings" class="btn-ghost-white">
-          <span>💼</span> Kariyer İlanları
-        </a>
-      </div>
-    </div>
-  </section>
+${headerHtml}
+${heroSectionHtml}
 
   <!-- 4. KEY METRICS BAR -->
   <div class="stats-wrap">
@@ -1269,7 +1458,7 @@ const renderHomePage = (stats = {}) => {
           <li><a href="#alumni-list">Mezunlar Listesi</a></li>
           <li><a href="#alumni-profiles">Mezun Profilleri</a></li>
           <li><a href="#product-page">Ürünler & Hizmetler</a></li>
-          <li><a href="/users">+ Mezun Kaydı</a></li>
+          <li><a href="/register">+ Mezun Kaydı</a></li>
         </ul>
       </div>
 
